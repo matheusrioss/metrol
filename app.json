@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "Watson",
+    "slug": "watson",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "watson",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0A0A0B",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0B"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "br.com.metrol.watson",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "O Watson usa o Face ID para liberar o acesso aos seus dados pessoais, de saude e corporativos."
+      }
+    },
+    "android": {
+      "package": "br.com.metrol.watson",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0B",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "O Watson usa o Face ID para liberar o acesso aos seus dados."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#C8A45C"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
