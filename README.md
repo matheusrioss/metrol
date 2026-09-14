@@ -10,6 +10,8 @@ trechos que você aprova na tela de revisão.
 
 ## Como rodar
 
+Passo a passo completo para Windows, do zero: **[COMO-ABRIR.md](COMO-ABRIR.md)**.
+
 ```bash
 npm install
 npx expo start
@@ -17,6 +19,11 @@ npx expo start
 
 Leia o QR code com o aplicativo Expo Go no iPhone. A base SQLite é criada no
 primeiro acesso, junto com o seu cadastro.
+
+O projeto está fixado no **Expo SDK 54**, e isso é deliberado: o Expo Go
+distribuído na App Store fica meses atrás das versões novas do Expo, e um projeto
+em SDK mais recente simplesmente não abre no iPhone. Ao atualizar o SDK, confira
+antes qual versão o Expo Go da App Store aceita.
 
 Para o chat funcionar, gere uma chave em `console.anthropic.com` e cole em
 Ajustes. A chave fica no Keychain do iOS, nunca no banco.

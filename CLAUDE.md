@@ -17,9 +17,15 @@ npm run typecheck   # tsc --noEmit
 chamadas de rede além da API da Anthropic, não adicione sincronização em nuvem e
 não mova dados para fora do aparelho.
 
-**Roda no Expo Go.** Não adicione dependência que exija build nativo próprio.
-Antes de instalar algo, confira se a versão consta em
+**Roda no Expo Go, no SDK 54.** Não adicione dependência que exija build nativo
+próprio. Antes de instalar algo, confira se a versão consta em
 `node_modules/expo/bundledNativeModules.json`.
+
+A fixação no SDK 54 é deliberada. O Expo Go da App Store fica meses atrás dos
+SDKs novos, e um projeto à frente dele não abre no iPhone de jeito nenhum. Não
+atualize o SDK sem antes confirmar qual versão o Expo Go da App Store aceita: o
+projeto precisa acompanhar o Expo Go, nunca o contrário. Isso deixa de valer no
+dia em que o app migrar para build próprio.
 
 **Nada sai sem aprovação.** Qualquer caminho novo que envie dados do usuário à
 IA precisa passar pelos blocos de `src/ai/context.ts` e pela tela de revisão.
