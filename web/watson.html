@@ -1,0 +1,2306 @@
+<title>Watson</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Watson veste um unico mundo visual: gabinete vitoriano a luz de gas.
+   Por isso a pagina nao segue o tema do visualizador, e pinta cada cor
+   explicitamente para se sustentar sobre qualquer fundo do hospedeiro. */
+:root {
+  color-scheme: dark;
+
+  --void: #0B0A08;
+  --surface: #141210;
+  --raised: #1C1916;
+  --hover: #24201B;
+  --line: #2A2621;
+  --line-strong: #3A342C;
+
+  --ink: #EFEBE4;
+  --ink-dim: #A09A8F;
+  --ink-mute: #6B655C;
+  --ink-inverse: #0B0A08;
+
+  --brass: #C8A45C;
+  --brass-bright: #E2C489;
+  --brass-deep: #8A6E33;
+  --brass-faint: rgba(200, 164, 92, 0.12);
+  --brass-line: rgba(200, 164, 92, 0.30);
+
+  --good: #5FAF86;
+  --good-faint: rgba(95, 175, 134, 0.14);
+  --warn: #E0B24A;
+  --warn-faint: rgba(224, 178, 74, 0.14);
+  --crit: #E2483C;
+  --crit-faint: rgba(226, 72, 60, 0.15);
+
+  --serif: "Libre Baskerville", Georgia, "Times New Roman", serif;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  --bar: 74px;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--void);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Luz de lamparina no alto da pagina, sutil e imovel. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 340px;
+  background: radial-gradient(120% 100% at 50% 0%, rgba(200, 164, 92, 0.09), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#app { position: relative; z-index: 1; }
+
+.wrap {
+  max-width: 620px;
+  margin: 0 auto;
+  padding-inline: 18px;
+  padding-block: 0 calc(var(--bar) + 40px + env(safe-area-inset-bottom, 0px));
+}
+
+h1, h2, h3 { font-family: var(--serif); font-weight: 400; margin: 0; text-wrap: balance; }
+
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+input, textarea, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; border-radius: 4px; }
+
+/* ---------- cabecalho de secao ---------- */
+.head { padding-block: 26px 20px; display: flex; align-items: flex-end; gap: 14px; }
+.head-text { flex: 1; min-width: 0; }
+.eyebrow {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--brass); margin-bottom: 6px;
+}
+.head h1 { font-size: 29px; line-height: 1.15; letter-spacing: 0.01em; }
+
+.add {
+  width: 40px; height: 40px; border-radius: 50%; flex: none;
+  background: var(--brass); color: var(--ink-inverse);
+  display: grid; place-items: center; font-size: 22px; line-height: 1;
+  transition: transform .12s ease, background .12s ease;
+}
+.add:hover { background: var(--brass-bright); transform: translateY(-1px); }
+
+/* ---------- superficies ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+}
+.card + .card { margin-top: 10px; }
+.card.lit { border-color: var(--brass-line); background: var(--raised); }
+
+.section-label {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-dim);
+  margin: 26px 0 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+}
+.section-label button { color: var(--brass); font-size: 11.5px; font-family: var(--sans); letter-spacing: 0; text-transform: none; }
+
+.rule { height: 1px; background: var(--line); border: 0; margin: 14px 0; }
+
+/* ---------- tipografia utilitaria ---------- */
+.dim { color: var(--ink-dim); }
+.mute { color: var(--ink-mute); }
+.small { font-size: 13px; line-height: 1.45; }
+.tiny { font-size: 11.5px; line-height: 1.4; }
+.strong { font-weight: 600; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* ---------- pastilhas de estado ---------- */
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 6px;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.01em;
+  background: rgba(160, 154, 143, 0.12); color: var(--ink-dim);
+}
+.pill.good { background: var(--good-faint); color: var(--good); }
+.pill.warn { background: var(--warn-faint); color: var(--warn); }
+.pill.crit { background: var(--crit-faint); color: var(--crit); }
+.pill.brass { background: var(--brass-faint); color: var(--brass); }
+
+/* ---------- botoes e campos ---------- */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 13px 20px; border-radius: 10px;
+  background: var(--brass); color: var(--ink-inverse);
+  font-weight: 600; letter-spacing: 0.01em;
+  transition: background .12s ease, opacity .12s ease;
+}
+.btn:hover { background: var(--brass-bright); }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--brass); border: 1px solid var(--brass-line); }
+.btn.ghost:hover { background: var(--brass-faint); }
+.btn.bare { background: transparent; color: var(--ink-dim); padding-block: 10px; }
+.btn.bare:hover { color: var(--ink); }
+.btn.danger { background: var(--crit-faint); color: var(--crit); border: 1px solid transparent; }
+
+.field { display: block; margin-bottom: 14px; }
+.field > span {
+  display: block; font-size: 11.5px; font-weight: 500;
+  color: var(--ink-dim); margin-bottom: 6px;
+}
+.field input, .field textarea, .field select {
+  width: 100%; background: var(--raised);
+  border: 1px solid var(--line-strong); border-radius: 10px;
+  padding: 11px 13px; font-size: 15px;
+}
+.field textarea { min-height: 110px; resize: vertical; line-height: 1.5; }
+.field input::placeholder, .field textarea::placeholder { color: var(--ink-mute); }
+.field .hint { font-size: 11.5px; color: var(--ink-mute); margin-top: 5px; display: block; }
+.field-row { display: flex; gap: 10px; }
+.field-row > * { flex: 1; min-width: 0; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+.chip {
+  padding: 6px 12px; border-radius: 99px;
+  border: 1px solid var(--line-strong); background: var(--surface);
+  font-size: 12px; color: var(--ink-dim);
+  transition: all .12s ease;
+}
+.chip:hover { border-color: var(--line-strong); color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--brass-faint); border-color: var(--brass-line); color: var(--brass-bright); }
+
+.err { color: var(--crit); font-size: 13px; margin-top: 8px; }
+.ok-note { color: var(--good); font-size: 13px; margin-top: 8px; }
+
+/* ---------- barra inferior ---------- */
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; align-items: flex-end; justify-content: space-around;
+  background: rgba(11, 10, 8, 0.94);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line);
+  padding: 10px 6px calc(10px + env(safe-area-inset-bottom, 0px));
+}
+.bar button {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  color: var(--ink-mute); padding: 2px 0;
+}
+.bar button svg { width: 21px; height: 21px; }
+.bar button span { font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; }
+.bar button[aria-current="true"] { color: var(--brass-bright); }
+.bar .home-slot { margin-top: -20px; }
+.bar .home-mark {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--brass-faint); border: 1px solid var(--brass-line);
+  display: grid; place-items: center; color: var(--brass);
+  transition: all .14s ease;
+}
+.bar button[aria-current="true"] .home-mark { background: var(--brass); border-color: var(--brass-bright); color: var(--ink-inverse); }
+.bar .home-slot svg { width: 22px; height: 22px; }
+
+/* ---------- lista de compromissos ---------- */
+.entry { display: flex; gap: 12px; align-items: flex-start; padding: 9px 0; width: 100%; text-align: left; }
+.entry + .entry { border-top: 1px solid var(--line); }
+.entry-time { width: 46px; flex: none; padding-top: 1px; }
+.entry-time b { font-family: var(--mono); font-size: 13.5px; color: var(--brass); font-weight: 500; }
+.entry-time i { display: block; font-family: var(--mono); font-size: 10px; color: var(--ink-mute); font-style: normal; }
+.entry-track { width: 2px; align-self: stretch; background: var(--line-strong); border-radius: 1px; flex: none; }
+.entry-body { flex: 1; min-width: 0; }
+.entry-body b { display: block; font-weight: 600; font-size: 14.5px; }
+.entry-body p { margin: 2px 0 0; font-size: 12px; color: var(--ink-mute); }
+.entry-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+
+/* ---------- calendario ---------- */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.cal-nav h2 { font-size: 18px; }
+.cal-nav button.step {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--raised); color: var(--ink-dim);
+  display: grid; place-items: center;
+}
+.cal-nav button.step:hover { background: var(--hover); color: var(--ink); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.cal-dow {
+  text-align: center; font-family: var(--mono); font-size: 9.5px;
+  letter-spacing: 0.1em; color: var(--ink-mute); padding-bottom: 8px;
+}
+.cal-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 3px 0; }
+.cal-num {
+  width: 33px; height: 33px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  transition: background .1s ease;
+}
+.cal-cell:hover .cal-num { background: var(--hover); }
+.cal-num.off { color: var(--ink-mute); opacity: .45; }
+.cal-num.today { box-shadow: inset 0 0 0 1px var(--brass-line); color: var(--brass-bright); }
+.cal-num.sel { background: var(--brass); color: var(--ink-inverse); font-weight: 600; }
+.cal-dots { display: flex; gap: 2px; height: 6px; align-items: center; }
+.cal-dot { width: 3.5px; height: 3.5px; border-radius: 50%; background: var(--brass-deep); }
+.cal-dot.bday { background: var(--good); }
+
+/* ---------- saude ---------- */
+.gauge-row { display: flex; align-items: center; gap: 20px; }
+.gauge { position: relative; flex: none; }
+.gauge-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0;
+}
+.gauge-center b { font-family: var(--serif); font-size: 26px; line-height: 1; }
+.gauge-center span { font-family: var(--mono); font-size: 8.5px; color: var(--ink-mute); letter-spacing: 0.08em; margin-top: 3px; }
+.stat-pair { display: flex; gap: 22px; margin-top: 10px; }
+.stat-pair div b { display: block; font-family: var(--serif); font-size: 19px; line-height: 1.1; }
+.stat-pair div span { font-family: var(--mono); font-size: 9.5px; color: var(--ink-mute); letter-spacing: 0.05em; }
+
+.metric { display: flex; align-items: baseline; gap: 8px; }
+.metric b { font-family: var(--serif); font-size: 25px; line-height: 1.1; }
+.metric u { text-decoration: none; font-size: 12px; color: var(--ink-mute); }
+.metric .delta { font-family: var(--mono); font-size: 10.5px; color: var(--ink-dim); background: var(--raised); padding: 2px 6px; border-radius: 5px; }
+
+.alert { display: flex; gap: 11px; align-items: flex-start; }
+.alert .glyph { flex: none; margin-top: 1px; }
+.alert b { display: block; font-size: 14.5px; font-weight: 600; }
+.alert p { margin: 4px 0 0; font-size: 13px; color: var(--ink-dim); line-height: 1.5; }
+
+/* ---------- dossies ---------- */
+.search {
+  display: flex; align-items: center; gap: 9px;
+  background: var(--raised); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 13px; margin-bottom: 14px;
+}
+.search input { flex: 1; background: none; border: none; padding: 0; font-size: 14.5px; }
+.search input:focus { outline: none; }
+.dossier h3 { font-size: 16.5px; line-height: 1.3; margin: 7px 0 6px; }
+.dossier p { margin: 0; font-size: 13px; color: var(--ink-dim); line-height: 1.5; }
+.dossier .meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.topics { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.topic { background: var(--raised); padding: 3px 8px; border-radius: 5px; font-family: var(--mono); font-size: 10px; color: var(--ink-dim); }
+
+/* ---------- conversa ---------- */
+.chat-log { display: flex; flex-direction: column; gap: 12px; }
+.turn { display: flex; gap: 9px; align-items: flex-end; }
+.turn.mine { justify-content: flex-end; }
+.avatar {
+  width: 25px; height: 25px; border-radius: 50%; flex: none;
+  background: var(--brass-faint); display: grid; place-items: center;
+  color: var(--brass); margin-bottom: 2px;
+}
+.bubble { max-width: 84%; padding: 11px 13px; border-radius: 13px; font-size: 14.5px; line-height: 1.55; white-space: pre-wrap; }
+.turn.theirs .bubble { background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
+.turn.mine .bubble { background: var(--brass-faint); border-bottom-right-radius: 5px; }
+.bubble .src { display: block; font-family: var(--mono); font-size: 9.5px; color: var(--ink-mute); margin-top: 8px; }
+
+.composer {
+  display: flex; gap: 8px; align-items: flex-end;
+  border-top: 1px solid var(--line); padding-top: 12px; margin-top: 16px;
+}
+.composer textarea {
+  flex: 1; background: var(--raised); border: 1px solid var(--line-strong);
+  border-radius: 12px; padding: 11px 13px; min-height: 44px; max-height: 130px;
+  resize: none; font-size: 14.5px; line-height: 1.45;
+}
+.composer button {
+  width: 42px; height: 42px; flex: none; border-radius: 50%;
+  background: var(--brass); color: var(--ink-inverse); display: grid; place-items: center;
+}
+.composer button[disabled] { opacity: .35; }
+
+.suggest { display: flex; flex-direction: column; gap: 7px; margin-top: 14px; }
+.suggest button {
+  border: 1px solid var(--line); background: var(--surface);
+  border-radius: 99px; padding: 10px 16px; font-size: 13px; color: var(--ink-dim);
+}
+.suggest button:hover { border-color: var(--brass-line); color: var(--ink); }
+
+/* ---------- vazio ---------- */
+.empty { text-align: center; padding: 34px 20px; }
+.empty .mark {
+  width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 14px;
+  background: var(--brass-faint); display: grid; place-items: center; color: var(--brass-deep);
+}
+.empty h3 { font-size: 17px; margin-bottom: 7px; }
+.empty p { margin: 0 auto; max-width: 330px; font-size: 13px; color: var(--ink-mute); line-height: 1.55; }
+
+/* ---------- painel deslizante ---------- */
+.scrim {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(5, 5, 4, 0.78);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.panel {
+  width: 100%; max-width: 620px; max-height: 92%;
+  background: var(--surface);
+  border: 1px solid var(--brass-line); border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  display: flex; flex-direction: column;
+  animation: rise .22s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes rise { from { transform: translateY(26px); opacity: .6; } }
+@media (prefers-reduced-motion: reduce) { .panel { animation: none; } }
+.panel-grip { width: 36px; height: 4px; border-radius: 2px; background: var(--line-strong); margin: 11px auto 0; flex: none; }
+.panel-head { display: flex; gap: 12px; align-items: flex-start; padding: 15px 20px 10px; flex: none; }
+.panel-head h2 { font-size: 21px; line-height: 1.2; flex: 1; }
+.panel-head p { margin: 3px 0 0; font-size: 12.5px; color: var(--ink-mute); line-height: 1.45; }
+.panel-close {
+  width: 30px; height: 30px; border-radius: 50%; flex: none;
+  background: var(--raised); color: var(--ink-dim); display: grid; place-items: center;
+}
+.panel-body { overflow-y: auto; padding: 6px 20px 18px; flex: 1; }
+.panel-foot { padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 9px; flex: none; }
+
+/* ---------- avisos ---------- */
+.banner {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--brass-faint); border-radius: 10px; padding: 12px 13px;
+  font-size: 12.5px; color: var(--ink-dim); line-height: 1.5;
+}
+.banner.warn { background: var(--warn-faint); }
+.banner svg { flex: none; margin-top: 1px; }
+
+.demo-flag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+  color: var(--warn); background: var(--warn-faint);
+  padding: 4px 9px; border-radius: 5px; text-transform: uppercase;
+}
+
+.spin { width: 15px; height: 15px; border: 2px solid var(--brass-line); border-top-color: var(--brass); border-radius: 50%; animation: turn .7s linear infinite; }
+@keyframes turn { to { transform: rotate(360deg); } }
+.thinking { display: flex; align-items: center; gap: 9px; color: var(--ink-mute); font-size: 12.5px; padding: 4px 0; }
+
+@media (max-width: 380px) {
+  .head h1 { font-size: 25px; }
+  .gauge-row { gap: 14px; }
+}
+</style>
+<div id="app">
+  <main class="wrap" id="view"></main>
+</div>
+<nav class="bar" id="bar"></nav>
+<div id="panel-host"></div>
+
+<script>
+"use strict";
+
+/* =====================================================================
+   Watson — assistente pessoal e corporativo.
+   Os dados vivem no banco do artefato, na conta de quem publica. A
+   pagina abre imediatamente e liga as funcionalidades conforme as
+   capacidades respondem; nada aqui depende de elas existirem.
+   ===================================================================== */
+
+const MESES = ["janeiro","fevereiro","marco","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const MESES_CURTO = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const DIAS = ["domingo","segunda-feira","terca-feira","quarta-feira","quinta-feira","sexta-feira","sabado"];
+const DOW = ["D","S","T","Q","Q","S","S"];
+
+const EMPRESAS = [
+  { id: "industria", curto: "Industria", longo: "Industria de sinalizacao de pista" },
+  { id: "engenharia", curto: "Engenharia", longo: "Engenharia aeroportuaria" },
+  { id: "administracao", curto: "Administracao", longo: "Administracao de aeroportos" },
+  { id: "software", curto: "Software", longo: "Tecnologia de gestao aeroportuaria" },
+  { id: "grupo", curto: "Grupo", longo: "Holding e assuntos transversais" },
+  { id: "externo", curto: "Externo", longo: "Parceiros, clientes e fornecedores" },
+];
+const empresaCurto = (id) => (EMPRESAS.find((e) => e.id === id) || EMPRESAS[4]).curto;
+
+const CATEGORIAS = [
+  { id: "reuniao", rotulo: "Reuniao" },
+  { id: "medico", rotulo: "Medico" },
+  { id: "viagem", rotulo: "Viagem" },
+  { id: "compromisso", rotulo: "Compromisso" },
+  { id: "pessoal", rotulo: "Pessoal" },
+];
+
+const LEMBRETES = [
+  { m: 10080, r: "1 semana antes" }, { m: 4320, r: "3 dias antes" },
+  { m: 2880, r: "2 dias antes" }, { m: 1440, r: "1 dia antes" },
+  { m: 180, r: "3 horas antes" }, { m: 120, r: "2 horas antes" },
+  { m: 60, r: "1 hora antes" }, { m: 30, r: "30 minutos antes" },
+  { m: 10, r: "10 minutos antes" }, { m: 5, r: "5 minutos antes" },
+  { m: 0, r: "Na hora do evento" },
+];
+
+const RECORRENCIAS = [
+  { id: "unico", rotulo: "Evento unico" }, { id: "diario", rotulo: "Todos os dias" },
+  { id: "semanal", rotulo: "Toda semana" }, { id: "quinzenal", rotulo: "A cada 15 dias" },
+  { id: "mensal", rotulo: "Todo mes" }, { id: "anual", rotulo: "Todo ano" },
+];
+
+const METRICAS = {
+  recuperacao: { rotulo: "Recuperacao", unidade: "%", dec: 0 },
+  vfc: { rotulo: "Variabilidade cardiaca", unidade: "ms", dec: 0 },
+  fcRepouso: { rotulo: "Frequencia em repouso", unidade: "bpm", dec: 0 },
+  sono: { rotulo: "Horas de sono", unidade: "h", dec: 1 },
+  desempenhoSono: { rotulo: "Desempenho do sono", unidade: "%", dec: 0 },
+  esforco: { rotulo: "Esforco diario", unidade: "", dec: 1 },
+  calorias: { rotulo: "Calorias", unidade: "kcal", dec: 0 },
+  respiracao: { rotulo: "Frequencia respiratoria", unidade: "rpm", dec: 1 },
+  oxigenacao: { rotulo: "Oxigenacao", unidade: "%", dec: 0 },
+  temperatura: { rotulo: "Temperatura da pele", unidade: "C", dec: 1 },
+};
+const METRICAS_PRINCIPAIS = ["recuperacao", "vfc", "fcRepouso", "sono", "desempenhoSono", "esforco"];
+
+/* ---------- datas ---------- */
+const pad = (n) => String(n).padStart(2, "0");
+const chaveDia = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const doDia = (iso) => { const [a, m, d] = iso.split("-").map(Number); return new Date(a, (m || 1) - 1, d || 1); };
+const hojeISO = () => chaveDia(new Date());
+const somaDias = (d, n) => { const c = new Date(d); c.setDate(c.getDate() + n); return c; };
+const inicioDia = (d) => { const c = new Date(d); c.setHours(0, 0, 0, 0); return c; };
+const distDias = (a, b) => Math.round((inicioDia(b) - inicioDia(a)) / 86400000);
+const mesmoDia = (a, b) => chaveDia(a) === chaveDia(b);
+const hora = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const dataLonga = (d) => `${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
+const dataCurta = (d) => `${d.getDate()} ${MESES_CURTO[d.getMonth()]}`;
+const mesAno = (d) => { const m = MESES[d.getMonth()]; return m[0].toUpperCase() + m.slice(1) + " de " + d.getFullYear(); };
+const diaCompleto = (d) => { const x = DIAS[d.getDay()]; return x[0].toUpperCase() + x.slice(1) + ", " + d.getDate() + " de " + MESES[d.getMonth()]; };
+
+function distanciaTexto(alvo, base = new Date()) {
+  const n = distDias(base, alvo);
+  if (n === 0) return "hoje";
+  if (n === 1) return "amanha";
+  if (n === -1) return "ontem";
+  if (n > 1 && n < 30) return `em ${n} dias`;
+  if (n < -1 && n > -30) return `ha ${Math.abs(n)} dias`;
+  if (n >= 30) return `em ${Math.round(n / 30)} meses`;
+  return `ha ${Math.round(Math.abs(n) / 30)} meses`;
+}
+
+function gradeMes(ref) {
+  const primeiro = new Date(ref.getFullYear(), ref.getMonth(), 1);
+  const cursor = somaDias(primeiro, -primeiro.getDay());
+  const semanas = [];
+  for (let s = 0; s < 6; s += 1) {
+    const semana = [];
+    for (let d = 0; d < 7; d += 1) semana.push(somaDias(cursor, s * 7 + d));
+    semanas.push(semana);
+  }
+  return semanas;
+}
+
+function proximoAniversario(mes, dia, base = new Date()) {
+  let alvo = new Date(base.getFullYear(), mes - 1, dia);
+  if (distDias(base, alvo) < 0) alvo = new Date(base.getFullYear() + 1, mes - 1, dia);
+  return alvo;
+}
+
+/* ---------- recorrencia ----------
+   Portado do aplicativo, onde a logica passou por testes que cobrem
+   dia 31 em mes de 30, limite de repeticao e janelas parciais. */
+function somaMesesMantendoDia(base, meses) {
+  const alvo = new Date(base);
+  const dia = base.getDate();
+  alvo.setDate(1);
+  alvo.setMonth(alvo.getMonth() + meses);
+  const ultimo = new Date(alvo.getFullYear(), alvo.getMonth() + 1, 0).getDate();
+  alvo.setDate(Math.min(dia, ultimo));
+  return alvo;
+}
+
+function expandir(evento, de, ate) {
+  const primeiro = new Date(evento.inicio);
+  if (Number.isNaN(primeiro.getTime())) return [];
+
+  const duracao = evento.fim ? Math.max(0, new Date(evento.fim) - primeiro) : 0;
+  const limite = evento.ate ? doDia(evento.ate) : null;
+  const abre = inicioDia(de);
+  const fecha = new Date(ate); fecha.setHours(23, 59, 59, 999);
+
+  const montar = (inicio, repetido) => ({
+    evento,
+    inicio,
+    fim: evento.fim ? new Date(inicio.getTime() + duracao) : null,
+    chave: chaveDia(inicio),
+    repetido,
+  });
+
+  if (!evento.recorrencia || evento.recorrencia === "unico") {
+    return primeiro >= abre && primeiro <= fecha ? [montar(primeiro, false)] : [];
+  }
+
+  const saida = [];
+  let cursor = new Date(primeiro);
+  let i = 0;
+  while (i < 800) {
+    if (cursor > fecha) break;
+    if (limite && inicioDia(cursor) > inicioDia(limite)) break;
+    if (cursor >= abre) saida.push(montar(new Date(cursor), i > 0));
+    i += 1;
+    if (evento.recorrencia === "diario") cursor = somaDias(primeiro, i);
+    else if (evento.recorrencia === "semanal") cursor = somaDias(primeiro, i * 7);
+    else if (evento.recorrencia === "quinzenal") cursor = somaDias(primeiro, i * 14);
+    else if (evento.recorrencia === "mensal") cursor = somaMesesMantendoDia(primeiro, i);
+    else if (evento.recorrencia === "anual") cursor = somaMesesMantendoDia(primeiro, i * 12);
+    else break;
+  }
+  return saida;
+}
+
+function ocorrenciasEntre(eventos, de, ate) {
+  const saida = [];
+  for (const e of eventos) saida.push(...expandir(e, de, ate));
+  return saida.sort((a, b) => a.inicio - b.inicio);
+}
+
+/* ---------- analise de saude ---------- */
+const ehNum = (v) => typeof v === "number" && !Number.isNaN(v);
+const media = (v) => (v.length ? v.reduce((a, b) => a + b, 0) / v.length : null);
+const serie = (dias, campo) => dias.map((d) => d[campo]).filter(ehNum);
+
+function faixaRecuperacao(v) {
+  if (!ehNum(v)) return { tom: "", rotulo: "sem dado" };
+  if (v < 34) return { tom: "crit", rotulo: "baixa" };
+  if (v < 67) return { tom: "warn", rotulo: "moderada" };
+  return { tom: "good", rotulo: "boa" };
+}
+
+/* Limites nas faixas do proprio Whoop: abaixo de 34% e zona vermelha,
+   entre 34% e 66% amarela. Sao sinais para investigar, nunca diagnostico. */
+function avaliarSaude(dias) {
+  const out = [];
+  if (!dias.length) return out;
+
+  const ord = [...dias].sort((a, b) => a.data.localeCompare(b.data));
+  const ultimo = ord[ord.length - 1];
+  const tres = ord.slice(-3);
+  const sete = ord.slice(-7);
+  const base14 = ord.slice(-14, -1);
+
+  if (ehNum(ultimo.recuperacao) && ultimo.recuperacao < 34) {
+    out.push({ tom: "crit", titulo: `Recuperacao em ${Math.round(ultimo.recuperacao)}%`,
+      texto: "Seu corpo esta na zona vermelha. Vale reduzir o esforco de hoje, adiar decisoes pesadas e priorizar sono." });
+  }
+
+  const r3 = serie(tres, "recuperacao");
+  if (r3.length >= 3 && r3.every((v) => v < 50)) {
+    out.push({ tom: "warn", titulo: "Tres dias seguidos abaixo de 50% de recuperacao",
+      texto: "Nao e um dia ruim isolado, e uma tendencia. Carga acumulada, sono curto ou estresse prolongado costumam explicar esse padrao." });
+  }
+
+  const s2 = serie(ord.slice(-2), "sono");
+  if (s2.length >= 2 && s2.every((v) => v < 6)) {
+    out.push({ tom: "warn", titulo: "Duas noites seguidas com menos de 6 horas",
+      texto: "O debito de sono se acumula e derruba a recuperacao dos proximos dias. Proteja a agenda da noite." });
+  }
+
+  const vfcAgora = media(serie(tres, "vfc"));
+  const vfcBase = media(serie(base14, "vfc"));
+  if (vfcAgora !== null && vfcBase !== null && vfcBase > 0) {
+    const queda = ((vfcAgora - vfcBase) / vfcBase) * 100;
+    if (queda <= -15) {
+      out.push({ tom: "warn", titulo: `Variabilidade cardiaca ${Math.abs(Math.round(queda))}% abaixo do seu normal`,
+        texto: "Queda sustentada da VFC costuma anteceder cansaco, infeccao ou excesso de estresse. Observe os proximos dias." });
+    }
+  }
+
+  const fcAgora = media(serie(tres, "fcRepouso"));
+  const fcBase = media(serie(base14, "fcRepouso"));
+  if (fcAgora !== null && fcBase !== null && fcBase > 0) {
+    const alta = ((fcAgora - fcBase) / fcBase) * 100;
+    if (alta >= 8) {
+      out.push({ tom: "warn", titulo: `Frequencia em repouso ${Math.round(alta)}% acima do habitual`,
+        texto: "Elevacao da frequencia de repouso aparece antes de gripes, apos alcool e em noites mal dormidas." });
+    }
+  }
+
+  if (ehNum(ultimo.esforco) && ehNum(ultimo.recuperacao) && ultimo.esforco > 14 && ultimo.recuperacao < 45) {
+    out.push({ tom: "warn", titulo: "Esforco alto com recuperacao baixa",
+      texto: `Voce registrou esforco ${ultimo.esforco.toFixed(1)} com apenas ${Math.round(ultimo.recuperacao)}% de recuperacao. Repetir esse padrao leva a exaustao.` });
+  }
+
+  const respAgora = media(serie(tres, "respiracao"));
+  const respBase = media(serie(base14, "respiracao"));
+  if (respAgora !== null && respBase !== null && respAgora - respBase >= 1.5) {
+    out.push({ tom: "warn", titulo: "Frequencia respiratoria acima da sua linha de base",
+      texto: "O Whoop trata esse sinal como um dos primeiros indicios de doenca respiratoria. Vale ficar atento." });
+  }
+
+  if (!out.length) {
+    const r7 = media(serie(sete, "recuperacao"));
+    if (r7 !== null && r7 >= 66) {
+      out.push({ tom: "good", titulo: `Semana solida, ${Math.round(r7)}% de recuperacao media`,
+        texto: "Corpo respondendo bem a carga atual. E uma boa janela para as semanas mais exigentes de agenda." });
+    }
+  }
+  return out;
+}
+
+function cargaPorDia(ocorrencias) {
+  const mapa = new Map();
+  for (const oc of ocorrencias) {
+    const cat = oc.evento.categoria;
+    if (cat !== "reuniao" && cat !== "compromisso") continue;
+    const atual = mapa.get(oc.chave) || { data: oc.chave, reunioes: 0, horas: 0 };
+    atual.reunioes += 1;
+    atual.horas += oc.fim ? (oc.fim - oc.inicio) / 3600000 : 1;
+    mapa.set(oc.chave, atual);
+  }
+  return mapa;
+}
+
+/* Custo fisiologico estimado de cada reuniao recorrente: a recuperacao do
+   dia seguinte a cada ocorrencia contra a media geral do periodo. Indicio,
+   nunca prova de causa. */
+function impactoReunioes(ocorrencias, dias, minimo = 2) {
+  const porData = new Map(dias.map((d) => [d.data, d]));
+  const geral = media(serie(dias, "recuperacao"));
+  if (geral === null) return [];
+
+  const grupos = new Map();
+  for (const oc of ocorrencias) {
+    const cat = oc.evento.categoria;
+    if (cat !== "reuniao" && cat !== "compromisso") continue;
+    const lista = grupos.get(oc.evento.id) || [];
+    lista.push(oc);
+    grupos.set(oc.evento.id, lista);
+  }
+
+  const saida = [];
+  for (const [id, lista] of grupos) {
+    const recs = [];
+    for (const oc of lista) {
+      const seguinte = porData.get(chaveDia(somaDias(doDia(oc.chave), 1)));
+      if (seguinte && ehNum(seguinte.recuperacao)) recs.push(seguinte.recuperacao);
+    }
+    if (recs.length < minimo) continue;
+    const m = media(recs);
+    saida.push({ id, titulo: lista[0].evento.titulo, ocorrencias: recs.length, recuperacaoSeguinte: m, delta: m - geral });
+  }
+  return saida.sort((a, b) => a.delta - b.delta);
+}
+
+/* Dias cheios contra dias leves, divididos por tercos. A divisao pela
+   mediana colapsava quando muitos dias tinham carga identica, que e o
+   normal de uma agenda executiva. */
+function correlacaoCarga(ocorrencias, dias) {
+  const carga = cargaPorDia(ocorrencias);
+  if (carga.size < 4) return null;
+
+  const porData = new Map(dias.map((d) => [d.data, d]));
+  const comRec = [...carga.values()]
+    .map((item) => {
+      const seguinte = porData.get(chaveDia(somaDias(doDia(item.data), 1)));
+      return seguinte && ehNum(seguinte.recuperacao) ? { horas: item.horas, rec: seguinte.recuperacao } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.horas - b.horas);
+
+  if (comRec.length < 4) return null;
+
+  const tam = Math.max(2, Math.floor(comRec.length / 3));
+  const leve = comRec.slice(0, tam);
+  const pesado = comRec.slice(-tam);
+  if (pesado[0].horas <= leve[leve.length - 1].horas) return null;
+
+  return {
+    dias: leve.length + pesado.length,
+    leve: media(leve.map((d) => d.rec)),
+    pesado: media(pesado.map((d) => d.rec)),
+    limiar: pesado[0].horas,
+  };
+}
+
+function resumirMetrica(campo, periodo, anterior = []) {
+  const v = serie(periodo, campo);
+  const p = serie(anterior, campo);
+  const m = media(v);
+  const ma = media(p);
+  return {
+    campo, amostras: v.length, media: m,
+    minimo: v.length ? Math.min(...v) : null,
+    maximo: v.length ? Math.max(...v) : null,
+    variacao: m !== null && ma !== null && ma !== 0 ? ((m - ma) / ma) * 100 : null,
+  };
+}
+</script>
+<script>
+"use strict";
+
+/* ---------- icones ---------- */
+const ICO = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-6h4v6"/></svg>',
+  cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  pulse: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2.5-6 4 13 2.5-7h5"/></svg>',
+  books: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h5v16H4zM10 4h4v16h-4z"/><path d="M16.5 4.5l3.5 1-3.5 15-3.5-1z"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1M18.7 18.7l-2.1-2.1M7.4 7.4 5.3 5.3"/></svg>',
+  glass: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="13" r="3.5"/><circle cx="17.5" cy="13" r="3.5"/><path d="M10 13h4M3 10.5 5 7h3M21 10.5 19 7h-3"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  close: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  left: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5 8 12l6.5 7"/></svg>',
+  right: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5 16 12l-6.5 7"/></svg>',
+  up: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg>',
+  search: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>',
+  gift: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="12" rx="1.5"/><path d="M3 13h18M12 9v12"/><path d="M12 9S10.5 4 8 4a2 2 0 0 0 0 5zM12 9s1.5-5 4-5a2 2 0 0 1 0 5z"/></svg>',
+  alert: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3.5 22 20H2z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>',
+  info: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.1"/></svg>',
+  check: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16 9.5"/></svg>',
+  spark: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/></svg>',
+  down: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5M4 20h16"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+  chat: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L3.5 20.5l1.4-5.9A8 8 0 1 1 21 12z"/></svg>',
+};
+
+/* ---------- utilidades de DOM ---------- */
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const $ = (sel, raiz = document) => raiz.querySelector(sel);
+const $$ = (sel, raiz = document) => [...raiz.querySelectorAll(sel)];
+
+function liga(raiz, seletor, evento, fn) {
+  $$(seletor, raiz).forEach((el) => el.addEventListener(evento, fn));
+}
+
+/* ---------- estado ---------- */
+const S = {
+  aba: "watson",
+  db: null,
+  sample: null,
+  downloads: null,
+  pronto: false,
+  demonstracao: false,
+
+  eventos: [],
+  aniversarios: [],
+  saude: [],
+  dossies: [],
+  conversa: [],
+
+  mesRef: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+  diaSel: new Date(),
+  abaAgenda: "mes",
+  periodoSaude: "semana",
+  filtroEmpresa: "todas",
+  busca: "",
+  pensando: false,
+  aviso: null,
+};
+
+const novoId = () => (crypto.randomUUID ? crypto.randomUUID() : "id" + Date.now() + Math.random().toString(36).slice(2));
+
+/* ---------- persistencia ----------
+   Sem banco a pagina segue funcionando em memoria: o visualizador ve
+   tudo, mas nada sobrevive ao recarregar. Avisamos em vez de falhar. */
+async function carregarTudo() {
+  if (!S.db) { S.demonstracao = true; aplicarDemonstracao(); return; }
+  try {
+    const [ev, an, sa, ds, cv] = await Promise.all([
+      S.db.collection("eventos").get(),
+      S.db.collection("aniversarios").get(),
+      S.db.collection("saude").orderBy("data", "desc").limit(200).get(),
+      S.db.collection("dossies").orderBy("data", "desc").limit(300).get(),
+      S.db.collection("conversa").orderBy("criadoEm", "desc").limit(40).get(),
+    ]);
+    S.eventos = ev.docs.map((d) => ({ id: d.id, ...d.data() }));
+    S.aniversarios = an.docs.map((d) => ({ id: d.id, ...d.data() }));
+    S.saude = sa.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.data.localeCompare(b.data));
+    S.dossies = ds.docs.map((d) => ({ id: d.id, ...d.data() }));
+    S.conversa = cv.docs.map((d) => ({ id: d.id, ...d.data() })).reverse();
+
+    const vazio = !S.eventos.length && !S.aniversarios.length && !S.saude.length && !S.dossies.length;
+    if (vazio) { S.demonstracao = true; aplicarDemonstracao(); }
+  } catch (e) {
+    S.aviso = "Nao consegui ler seus dados agora. " + (e && e.message ? e.message : "");
+  }
+}
+
+async function salvar(colecao, id, dados) {
+  const lista = { eventos: S.eventos, aniversarios: S.aniversarios, saude: S.saude, dossies: S.dossies }[colecao];
+  if (S.demonstracao) { limparDemonstracao(); }
+  const i = lista.findIndex((x) => x.id === id);
+  if (i >= 0) lista[i] = { id, ...dados }; else lista.push({ id, ...dados });
+  if (colecao === "saude") lista.sort((a, b) => a.data.localeCompare(b.data));
+  if (colecao === "dossies") lista.sort((a, b) => b.data.localeCompare(a.data));
+  if (!S.db) return;
+  try { await S.db.doc(`${colecao}/${id}`).set(dados); }
+  catch (e) { S.aviso = "A gravacao falhou: " + (e && e.message ? e.message : "erro desconhecido"); render(); }
+}
+
+async function remover(colecao, id) {
+  const chaves = { eventos: "eventos", aniversarios: "aniversarios", saude: "saude", dossies: "dossies" };
+  S[chaves[colecao]] = S[chaves[colecao]].filter((x) => x.id !== id);
+  if (!S.db) return;
+  try { await S.db.doc(`${colecao}/${id}`).delete(); }
+  catch (e) { S.aviso = "Nao consegui apagar: " + (e && e.message ? e.message : ""); render(); }
+}
+
+/* ---------- demonstracao ----------
+   Com a base vazia a pagina mostra como fica em uso, sempre marcada como
+   exemplo. O primeiro registro real apaga tudo isto. */
+function aplicarDemonstracao() {
+  const hoje = new Date();
+  const em = (d, h, m) => { const x = somaDias(hoje, d); x.setHours(h, m, 0, 0); return x.toISOString(); };
+
+  S.eventos = [
+    { id: "demo1", titulo: "Comite executivo do grupo", descricao: "Resultados do trimestre e plano de expansao para a America Latina", categoria: "reuniao", empresa: "grupo", local: "Sede", inicio: em(0, 9, 0), fim: em(0, 11, 0), recorrencia: "semanal", lembretes: [60], demo: true },
+    { id: "demo2", titulo: "Homologacao de balizamento", descricao: "Ensaio fotometrico da nova linha de luminarias de pista", categoria: "reuniao", empresa: "industria", local: "Fabrica", inicio: em(0, 14, 30), fim: em(0, 16, 0), recorrencia: "unico", lembretes: [30], demo: true },
+    { id: "demo3", titulo: "Visita tecnica ao patio", categoria: "viagem", empresa: "engenharia", inicio: em(1, 8, 0), fim: em(1, 12, 0), recorrencia: "unico", lembretes: [1440], demo: true },
+  ];
+  S.aniversarios = [
+    { id: "demoa1", nome: "Socio fundador", dia: somaDias(hoje, 3).getDate(), mes: somaDias(hoje, 3).getMonth() + 1, ano: 1968, relacao: "Sociedade", lembretes: [10080, 1440], demo: true },
+  ];
+  S.saude = [];
+  for (let i = 13; i >= 0; i -= 1) {
+    const d = somaDias(hoje, -i);
+    const onda = Math.sin(i / 2.4);
+    S.saude.push({
+      id: chaveDia(d), data: chaveDia(d), demo: true,
+      recuperacao: Math.round(58 + onda * 22),
+      vfc: Math.round(46 + onda * 9),
+      fcRepouso: Math.round(56 - onda * 4),
+      sono: Number((6.9 + onda * 0.9).toFixed(1)),
+      desempenhoSono: Math.round(82 + onda * 10),
+      esforco: Number((11.5 + Math.abs(onda) * 4).toFixed(1)),
+    });
+  }
+  S.dossies = [
+    { id: "demod1", titulo: "Licitacao de balizamento em Confins", empresa: "industria", data: chaveDia(somaDias(hoje, -6)),
+      participantes: ["Diretoria comercial", "Engenharia de produto"], temas: ["licitacao", "balizamento", "prazo"],
+      resumo: "Analise do edital de balizamento noturno e da capacidade atual da fabrica para atender o volume no prazo do certame.",
+      decisoes: "Aprovado participar do certame com proposta propria.",
+      acoes: "Engenharia fecha o custo unitario ate o fim da semana.", demo: true },
+    { id: "demod2", titulo: "Roadmap do modulo de faturamento", empresa: "software", data: chaveDia(somaDias(hoje, -11)),
+      participantes: ["Produto", "Operacoes aeroportuarias"], temas: ["roadmap", "integracao", "faturamento"],
+      resumo: "Integracao do modulo de faturamento com os dados de movimentacao da torre, e o impacto na cobranca por aeronave.",
+      decisoes: "Integracao entra na proxima versao.", demo: true },
+  ];
+}
+
+function limparDemonstracao() {
+  if (!S.demonstracao) return;
+  S.demonstracao = false;
+  S.eventos = S.eventos.filter((x) => !x.demo);
+  S.aniversarios = S.aniversarios.filter((x) => !x.demo);
+  S.saude = S.saude.filter((x) => !x.demo);
+  S.dossies = S.dossies.filter((x) => !x.demo);
+}
+
+/* ---------- consultas derivadas ---------- */
+function aniversariosProximos(limite) {
+  const hoje = new Date();
+  const lista = S.aniversarios.map((b) => {
+    const prox = proximoAniversario(b.mes, b.dia, hoje);
+    return { b, prox, faltam: distDias(hoje, prox), idade: b.ano ? prox.getFullYear() - b.ano : null };
+  }).sort((a, b) => a.faltam - b.faltam);
+  return typeof limite === "number" ? lista.slice(0, limite) : lista;
+}
+
+function saudeEntre(deISO, ateISO) {
+  return S.saude.filter((d) => d.data >= deISO && d.data <= ateISO);
+}
+
+/* Busca textual simples sobre os dossies: sem acento, por prefixo, e
+   com todos os termos antes de relaxar para qualquer um deles. */
+const semAcento = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+function buscarDossies(consulta) {
+  const termos = semAcento(consulta).split(/\s+/).filter((t) => t.length >= 3);
+  if (!termos.length) return S.dossies;
+  const campos = (d) => semAcento([d.titulo, d.resumo, d.decisoes, d.acoes, (d.participantes || []).join(" "), (d.temas || []).join(" "), empresaCurto(d.empresa)].join(" "));
+  const todos = S.dossies.filter((d) => { const t = campos(d); return termos.every((x) => t.includes(x)); });
+  if (todos.length) return todos;
+  return S.dossies.filter((d) => { const t = campos(d); return termos.some((x) => t.includes(x)); });
+}
+</script>
+<script>
+"use strict";
+
+/* ---------- graficos ----------
+   Uma serie por grafico, entao nenhum precisa de legenda: o rotulo acima
+   ja nomeia o que a linha mostra. O ultimo ponto fica marcado porque e o
+   valor que interessa agora. */
+function sparkline(valores, cor = "var(--brass)", altura = 46) {
+  const pontos = valores.filter((v) => ehNum(v));
+  if (pontos.length < 2) return `<div style="height:${altura}px"></div>`;
+  const L = 300, P = 5;
+  const min = Math.min(...pontos), max = Math.max(...pontos);
+  const amp = max - min || 1;
+  const passo = (L - P * 2) / (pontos.length - 1);
+  const xy = pontos.map((v, i) => [P + i * passo, P + (1 - (v - min) / amp) * (altura - P * 2)]);
+  const linha = xy.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+  const area = `${linha} L${xy[xy.length - 1][0].toFixed(1)},${altura} L${xy[0][0].toFixed(1)},${altura} Z`;
+  const gid = "g" + Math.random().toString(36).slice(2, 8);
+  const ult = xy[xy.length - 1];
+  return `<svg viewBox="0 0 ${L} ${altura}" width="100%" height="${altura}" preserveAspectRatio="none" role="img" aria-label="tendencia do periodo">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${cor}" stop-opacity="0.24"/><stop offset="1" stop-color="${cor}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#${gid})"/>
+    <path d="${linha}" fill="none" stroke="${cor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    <circle cx="${ult[0].toFixed(1)}" cy="${ult[1].toFixed(1)}" r="3.4" fill="${cor}" stroke="var(--surface)" stroke-width="2"/>
+  </svg>`;
+}
+
+/* Barras com folga entre si, extremidade arredondada e coluna apagada
+   onde nao ha registro: um dia sem dado nao pode parecer um dia ruim. */
+function barras(itens, teto = 100, altura = 76) {
+  if (!itens.length) return "";
+  const L = 320, vao = L / itens.length;
+  // Folga generosa entre colunas: no teste visual, barras coladas liam
+  // como blocos e escondiam a variacao do periodo.
+  const larg = Math.max(3, Math.min(vao * 0.52, 14));
+  const marcas = itens.map((it, i) => {
+    const x = i * vao + (vao - larg) / 2;
+    if (!ehNum(it.v)) return `<rect x="${x.toFixed(1)}" y="${altura - 3}" width="${larg.toFixed(1)}" height="3" rx="1.5" fill="var(--line)"/>`;
+    const h = Math.max(3, (Math.min(it.v, teto) / teto) * altura);
+    const cor = it.cor || "var(--brass)";
+    return `<rect x="${x.toFixed(1)}" y="${(altura - h).toFixed(1)}" width="${larg.toFixed(1)}" height="${h.toFixed(1)}" rx="${Math.min(3, larg / 2).toFixed(1)}" fill="${cor}"/>`;
+  }).join("");
+  const rotulos = itens.map((it) => `<span style="flex:1;text-align:center">${esc(it.r || "")}</span>`).join("");
+  return `<svg viewBox="0 0 ${L} ${altura}" width="100%" height="${altura}" preserveAspectRatio="none" role="img" aria-label="valores diarios do periodo">${marcas}</svg>
+    <div style="display:flex;font-family:var(--mono);font-size:9px;color:var(--ink-mute);margin-top:5px">${rotulos}</div>`;
+}
+
+function medidor(valor, cor, rotulo, tam = 96) {
+  const esp = 7, raio = (tam - esp) / 2, circ = 2 * Math.PI * raio;
+  const p = ehNum(valor) ? Math.max(0, Math.min(100, valor)) / 100 : 0;
+  return `<div class="gauge" style="width:${tam}px;height:${tam}px">
+    <svg width="${tam}" height="${tam}" viewBox="0 0 ${tam} ${tam}" role="img" aria-label="${esc(rotulo)} ${ehNum(valor) ? Math.round(valor) + " por cento" : "sem dado"}">
+      <circle cx="${tam / 2}" cy="${tam / 2}" r="${raio}" fill="none" stroke="var(--line)" stroke-width="${esp}"/>
+      <circle cx="${tam / 2}" cy="${tam / 2}" r="${raio}" fill="none" stroke="${cor}" stroke-width="${esp}" stroke-linecap="round"
+        stroke-dasharray="${(circ * p).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 ${tam / 2} ${tam / 2})"/>
+    </svg>
+    <div class="gauge-center"><b>${ehNum(valor) ? Math.round(valor) : "--"}</b><span>${esc(rotulo)}</span></div>
+  </div>`;
+}
+
+function etiquetaDemo() {
+  return S.demonstracao ? `<div class="demo-flag">${ICO.info} exemplo</div>` : "";
+}
+
+function linhaCompromisso(oc) {
+  const e = oc.evento;
+  const detalhe = [e.empresa ? empresaCurto(e.empresa) : null, e.local, e.descricao].filter(Boolean).join(" · ");
+  return `<button class="entry" data-abrir-evento="${esc(e.id)}">
+    <div class="entry-time"><b>${e.diaInteiro ? "dia" : hora(oc.inicio)}</b>${oc.fim && !e.diaInteiro ? `<i>${hora(oc.fim)}</i>` : ""}</div>
+    <div class="entry-track"></div>
+    <div class="entry-body"><b>${esc(e.titulo)}</b>${detalhe ? `<p>${esc(detalhe)}</p>` : ""}</div>
+  </button>`;
+}
+
+/* ===================== WATSON (inicio) ===================== */
+function viewWatson() {
+  const agora = new Date();
+  const h = agora.getHours();
+  const saudacao = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+
+  const ocs = ocorrenciasEntre(S.eventos, agora, somaDias(agora, 1));
+  const hoje = ocs.filter((o) => o.chave === chaveDia(agora));
+  const amanha = ocs.filter((o) => o.chave === chaveDia(somaDias(agora, 1)));
+  const anivs = aniversariosProximos(5).filter((a) => a.faltam <= 45);
+
+  const recentes = S.saude.slice(-21);
+  const ultimo = recentes.length ? recentes[recentes.length - 1] : null;
+  const ehDeHoje = ultimo && ultimo.data === chaveDia(agora);
+  const faixa = faixaRecuperacao(ultimo && ultimo.recuperacao);
+  const alertas = avaliarSaude(recentes);
+
+  const horasHoje = hoje
+    .filter((o) => o.evento.categoria === "reuniao" || o.evento.categoria === "compromisso")
+    .reduce((a, o) => a + (o.fim ? (o.fim - o.inicio) / 3600000 : 1), 0);
+
+  const ocs90 = ocorrenciasEntre(S.eventos, somaDias(agora, -90), agora);
+  const corr = correlacaoCarga(ocs90, S.saude);
+
+  return `
+  <div class="head">
+    <div class="head-text">
+      <div class="eyebrow">${esc(diaCompleto(agora))}</div>
+      <h1>${saudacao}.</h1>
+    </div>
+    ${etiquetaDemo()}
+  </div>
+
+  ${S.aviso ? `<div class="banner warn">${ICO.alert}<span>${esc(S.aviso)}</span></div><div style="height:12px"></div>` : ""}
+
+  ${S.demonstracao ? `<div class="banner">${ICO.info}<span>Estes sao dados de exemplo, para voce ver como o Watson fica em uso. Assim que registrar seu primeiro evento, relatorio ou dossie, eles desaparecem para sempre.</span></div><div style="height:14px"></div>` : ""}
+
+  <div class="card lit">
+    <div style="display:flex;gap:11px;align-items:flex-start">
+      <div class="avatar" style="width:31px;height:31px;border:1px solid var(--brass-line)">${ICO.glass}</div>
+      <div style="flex:1;min-width:0">
+        <h2 style="font-size:17px">Falar com o Watson</h2>
+        <p class="tiny mute" style="margin:3px 0 0">${S.dossies.length ? `${S.dossies.length} ${S.dossies.length > 1 ? "dossies" : "dossie"} na base, ${S.saude.length} dias de saude e sua agenda.` : "A base ainda esta vazia. Comece por um resumo de reuniao."}</p>
+      </div>
+    </div>
+    <div style="height:14px"></div>
+    <button id="abrir-conversa" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:var(--void);border:1px solid var(--line-strong);border-radius:10px;padding:7px 7px 7px 14px">
+      <span class="dim" style="font-size:14.5px">Pergunte qualquer coisa...</span>
+      <span style="width:32px;height:32px;border-radius:50%;background:var(--brass);color:var(--ink-inverse);display:grid;place-items:center">${ICO.up}</span>
+    </button>
+  </div>
+
+  ${alertas.length ? `
+    <div class="section-label"><span>Sinais do seu corpo</span></div>
+    ${alertas.slice(0, 3).map((a) => `
+      <div class="card alert">
+        <span class="glyph" style="color:var(--${a.tom === "crit" ? "crit" : a.tom === "warn" ? "warn" : "good"})">${a.tom === "good" ? ICO.check : ICO.alert}</span>
+        <div><b>${esc(a.titulo)}</b><p>${esc(a.texto)}</p></div>
+      </div>`).join("")}
+  ` : ""}
+
+  <div class="section-label"><span>Sua saude</span><button data-ir="saude">Ver tudo</button></div>
+  ${ultimo ? `
+    <div class="card">
+      <div class="gauge-row">
+        ${medidor(ultimo.recuperacao, `var(--${faixa.tom || "brass"})`, "recuperacao")}
+        <div style="flex:1;min-width:0">
+          <span class="pill ${faixa.tom}">Recuperacao ${esc(faixa.rotulo)}</span>
+          <div class="stat-pair">
+            <div><b class="num">${ehNum(ultimo.sono) ? ultimo.sono.toFixed(1) : "--"}</b><span>HORAS DE SONO</span></div>
+            <div><b class="num">${ehNum(ultimo.esforco) ? ultimo.esforco.toFixed(1) : "--"}</b><span>ESFORCO</span></div>
+            <div><b class="num">${ehNum(ultimo.vfc) ? Math.round(ultimo.vfc) : "--"}</b><span>VFC MS</span></div>
+          </div>
+        </div>
+      </div>
+      ${recentes.length > 2 ? `<div style="margin-top:16px"><div class="tiny mute" style="margin-bottom:6px">Recuperacao nos ultimos ${recentes.length} dias</div>${sparkline(recentes.map((d) => d.recuperacao), `var(--${faixa.tom || "brass"})`)}</div>` : ""}
+      ${!ehDeHoje ? `<p class="tiny" style="color:var(--warn);margin:12px 0 0">Ultimo registro de ${esc(ultimo.data)}. Lance o relatorio de hoje na aba Saude.</p>` : ""}
+    </div>
+  ` : `
+    <div class="card"><div style="display:flex;gap:12px;align-items:center">
+      <span class="mute">${ICO.pulse}</span>
+      <p class="small mute" style="margin:0;flex:1">Nenhum indicador ainda. Cole seu relatorio do Whoop na aba Saude e o Watson passa a acompanhar.</p>
+    </div></div>
+  `}
+
+  <div class="section-label"><span>Hoje${hoje.length ? ` · ${hoje.length} ${hoje.length > 1 ? "compromissos" : "compromisso"}` : ""}</span><button data-ir="agenda">Agenda</button></div>
+  <div class="card">
+    ${hoje.length ? hoje.map(linhaCompromisso).join("") : `<p class="small mute" style="margin:0">Nenhum compromisso hoje. Aproveite o silencio.</p>`}
+    ${horasHoje > 0 ? `<hr class="rule"><p class="tiny mute" style="margin:0">${horasHoje.toFixed(1)} horas em reuniao hoje.${corr && horasHoje > corr.limiar ? ` Em dias assim sua recuperacao no dia seguinte fica em torno de ${Math.round(corr.pesado)}%, contra ${Math.round(corr.leve)}% nos dias leves.` : ""}</p>` : ""}
+  </div>
+
+  ${amanha.length ? `
+    <div class="section-label"><span>Amanha</span></div>
+    <div class="card">${amanha.slice(0, 4).map(linhaCompromisso).join("")}</div>
+  ` : ""}
+
+  ${anivs.length ? `
+    <div class="section-label"><span>Aniversarios</span><button data-ir="agenda">Gerenciar</button></div>
+    <div class="card">
+      ${anivs.map((a) => `
+        <div class="entry">
+          <div style="width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;background:${a.faltam === 0 ? "var(--brass-faint)" : "var(--raised)"};color:${a.faltam === 0 ? "var(--brass)" : "var(--ink-mute)"}">${ICO.gift}</div>
+          <div class="entry-body">
+            <b>${esc(a.b.nome)}</b>
+            <p>${esc(distanciaTexto(a.prox))}${a.idade ? ` · faz ${a.idade} anos` : ""}${a.b.relacao ? ` · ${esc(a.b.relacao)}` : ""}</p>
+          </div>
+          ${a.faltam === 0 ? '<span class="pill good">hoje</span>' : ""}
+        </div>`).join("")}
+    </div>
+  ` : ""}
+  `;
+}
+
+/* ===================== AGENDA ===================== */
+function viewAgenda() {
+  const semanas = gradeMes(S.mesRef);
+  const de = new Date(S.mesRef.getFullYear(), S.mesRef.getMonth() - 1, 20);
+  const ate = new Date(S.mesRef.getFullYear(), S.mesRef.getMonth() + 2, 10);
+  const ocs = ocorrenciasEntre(S.eventos, de, ate);
+
+  const porDia = new Map();
+  for (const oc of ocs) {
+    const l = porDia.get(oc.chave) || [];
+    l.push(oc);
+    porDia.set(oc.chave, l);
+  }
+
+  const anivs = aniversariosProximos();
+  const temAniv = (d) => S.aniversarios.some((b) => b.dia === d.getDate() && b.mes === d.getMonth() + 1);
+
+  const doDiaSel = porDia.get(chaveDia(S.diaSel)) || [];
+  const anivDoDia = anivs.filter((a) => a.b.dia === S.diaSel.getDate() && a.b.mes === S.diaSel.getMonth() + 1);
+
+  const grade = `
+    <div class="card" style="padding:16px 10px">
+      <div class="cal-nav" style="padding-inline:6px">
+        <button class="step" data-mes="-1" aria-label="Mes anterior">${ICO.left}</button>
+        <button data-mes="0"><h2>${esc(mesAno(S.mesRef))}</h2></button>
+        <button class="step" data-mes="1" aria-label="Proximo mes">${ICO.right}</button>
+      </div>
+      <div class="cal-grid">${DOW.map((d) => `<div class="cal-dow">${d}</div>`).join("")}</div>
+      ${semanas.map((sem) => `<div class="cal-grid">${sem.map((dia) => {
+        const k = chaveDia(dia);
+        const evs = porDia.get(k) || [];
+        const doMes = dia.getMonth() === S.mesRef.getMonth();
+        const sel = mesmoDia(dia, S.diaSel);
+        const ehHoje = mesmoDia(dia, new Date());
+        return `<button class="cal-cell" data-dia="${k}" aria-label="${esc(dataLonga(dia))}">
+          <span class="cal-num ${doMes ? "" : "off"} ${ehHoje ? "today" : ""} ${sel ? "sel" : ""}">${dia.getDate()}</span>
+          <span class="cal-dots">
+            ${evs.slice(0, 3).map(() => `<i class="cal-dot"${sel ? ' style="background:var(--brass-bright)"' : ""}></i>`).join("")}
+            ${temAniv(dia) ? '<i class="cal-dot bday"></i>' : ""}
+          </span>
+        </button>`;
+      }).join("")}</div>`).join("")}
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 10px">
+      <h2 style="font-size:17px">${esc(dataLonga(S.diaSel))}</h2>
+      <button data-novo-evento style="color:var(--brass);font-size:12px">Adicionar</button>
+    </div>
+
+    ${doDiaSel.length || anivDoDia.length ? `
+      ${anivDoDia.map((a) => `<div class="card" style="display:flex;gap:12px;align-items:center">
+        <span style="color:var(--brass)">${ICO.gift}</span>
+        <div style="flex:1"><b style="font-size:14.5px">Aniversario de ${esc(a.b.nome)}</b>
+        <p class="tiny mute" style="margin:2px 0 0">${a.idade ? `Completa ${a.idade} anos` : "Sem ano informado"}${a.b.relacao ? ` · ${esc(a.b.relacao)}` : ""}</p></div>
+      </div>`).join("")}
+      ${doDiaSel.map((oc) => `<div class="card">${linhaCompromisso(oc)}
+        ${(oc.evento.empresa || oc.evento.local || oc.repetido) ? `<div class="entry-tags" style="padding-left:58px">
+          ${oc.evento.empresa ? `<span class="pill">${esc(empresaCurto(oc.evento.empresa))}</span>` : ""}
+          ${oc.evento.local ? `<span class="pill">${esc(oc.evento.local)}</span>` : ""}
+          ${oc.repetido ? '<span class="pill">repete</span>' : ""}
+        </div>` : ""}</div>`).join("")}
+    ` : `<div class="card"><p class="small mute" style="margin:0">Nada marcado para este dia. Toque em adicionar para criar um evento.</p></div>`}
+  `;
+
+  const listaAnivs = anivs.length ? anivs.map((a) => `
+    <button class="card" style="display:flex;gap:12px;align-items:center;width:100%;text-align:left" data-abrir-aniv="${esc(a.b.id)}">
+      <span style="width:38px;height:38px;border-radius:50%;flex:none;display:grid;place-items:center;background:${a.faltam <= 7 ? "var(--brass-faint)" : "var(--raised)"};font-family:var(--mono);color:var(--brass)">${a.b.dia}</span>
+      <div style="flex:1;min-width:0">
+        <b style="font-size:14.5px">${esc(a.b.nome)}</b>
+        <p class="tiny mute" style="margin:2px 0 0">${esc(dataLonga(a.prox))} · ${esc(distanciaTexto(a.prox))}${a.idade ? ` · faz ${a.idade}` : ""}</p>
+        ${a.b.relacao ? `<div class="entry-tags"><span class="pill">${esc(a.b.relacao)}</span></div>` : ""}
+      </div>
+      ${a.faltam === 0 ? '<span class="pill good">hoje</span>' : ""}
+    </button>`).join("") : `
+    <div class="empty">
+      <div class="mark">${ICO.gift}</div>
+      <h3>Nenhum aniversario cadastrado</h3>
+      <p>Cadastre a data e o nome, e escolha com quanta antecedencia o Watson deve avisar.</p>
+      <div style="height:18px"></div>
+      <button class="btn ghost" data-novo-aniv>Adicionar o primeiro</button>
+    </div>`;
+
+  return `
+  <div class="head">
+    <div class="head-text">
+      <div class="eyebrow">Sua agenda</div>
+      <h1>${S.abaAgenda === "mes" ? "Calendario" : "Aniversarios"}</h1>
+    </div>
+    <button class="add" ${S.abaAgenda === "mes" ? "data-novo-evento" : "data-novo-aniv"} aria-label="Adicionar">${ICO.plus}</button>
+  </div>
+
+  <div class="chips">
+    <button class="chip" data-aba-agenda="mes" aria-pressed="${S.abaAgenda === "mes"}">Mes</button>
+    <button class="chip" data-aba-agenda="aniversarios" aria-pressed="${S.abaAgenda === "aniversarios"}">Aniversarios${S.aniversarios.length ? ` (${S.aniversarios.length})` : ""}</button>
+  </div>
+
+  ${S.abaAgenda === "mes" ? grade : listaAnivs}
+  `;
+}
+</script>
+<script>
+"use strict";
+
+/* ===================== SAUDE ===================== */
+const TAMANHO_PERIODO = { dia: 1, semana: 7, mes: 30 };
+
+function viewSaude() {
+  const tam = TAMANHO_PERIODO[S.periodoSaude];
+  const hoje = new Date();
+  const de = somaDias(hoje, -(tam - 1));
+  const dias = saudeEntre(chaveDia(de), chaveDia(hoje));
+  const anteriores = saudeEntre(chaveDia(somaDias(de, -tam)), chaveDia(somaDias(de, -1)));
+
+  const ultimo = dias.length ? dias[dias.length - 1] : null;
+  const faixa = faixaRecuperacao(ultimo && ultimo.recuperacao);
+  const alertas = avaliarSaude(S.saude.slice(-90));
+
+  const ocs90 = ocorrenciasEntre(S.eventos, somaDias(hoje, -90), hoje);
+  const impactos = impactoReunioes(ocs90, S.saude.slice(-90)).slice(0, 5);
+
+  // Serie continua, com lacuna onde nao houve registro.
+  const continua = [];
+  for (let i = tam - 1; i >= 0; i -= 1) {
+    const d = somaDias(hoje, -i);
+    const reg = dias.find((x) => x.data === chaveDia(d));
+    continua.push({
+      r: tam <= 7 ? DOW[d.getDay()] : (i % 6 === 0 ? String(d.getDate()) : ""),
+      v: reg ? reg.recuperacao : null,
+      cor: reg && ehNum(reg.recuperacao) ? `var(--${faixaRecuperacao(reg.recuperacao).tom || "brass"})` : null,
+    });
+  }
+
+  const cabeca = `
+  <div class="head">
+    <div class="head-text">
+      <div class="eyebrow">Indicadores do Whoop</div>
+      <h1>Saude</h1>
+    </div>
+    <button class="add" data-novo-relatorio aria-label="Lancar relatorio">${ICO.plus}</button>
+  </div>
+  <div class="chips">
+    ${["dia", "semana", "mes"].map((p) => `<button class="chip" data-periodo="${p}" aria-pressed="${S.periodoSaude === p}">${p === "dia" ? "Hoje" : p === "semana" ? "7 dias" : "30 dias"}</button>`).join("")}
+  </div>`;
+
+  if (!dias.length) {
+    return cabeca + `
+    <div class="empty">
+      <div class="mark">${ICO.pulse}</div>
+      <h3>Nenhum indicador neste periodo</h3>
+      <p>Cole o relatorio do Whoop e o Watson organiza tudo: recuperacao, sono, esforco e variabilidade cardiaca, dia a dia.</p>
+      <div style="height:18px"></div>
+      <button class="btn ghost" data-novo-relatorio>Lancar relatorio</button>
+    </div>`;
+  }
+
+  return cabeca + `
+  <div class="card lit">
+    <div class="gauge-row">
+      ${medidor(ultimo.recuperacao, `var(--${faixa.tom || "brass"})`, "recuperacao", 104)}
+      <div style="flex:1;min-width:0">
+        <span class="pill ${faixa.tom}">Recuperacao ${esc(faixa.rotulo)}</span>
+        <p class="tiny mute" style="margin:7px 0 0">Ultimo registro em ${esc(ultimo.data)}</p>
+        <div class="stat-pair">
+          <div><b class="num">${ehNum(ultimo.sono) ? ultimo.sono.toFixed(1) : "--"}</b><span>HORAS DE SONO</span></div>
+          <div><b class="num">${ehNum(ultimo.esforco) ? ultimo.esforco.toFixed(1) : "--"}</b><span>ESFORCO</span></div>
+        </div>
+      </div>
+    </div>
+    ${S.periodoSaude !== "dia" ? `
+      <div style="margin-top:20px">
+        <div class="tiny mute" style="margin-bottom:8px">Recuperacao diaria · ${S.periodoSaude === "semana" ? "ultimos 7 dias" : "ultimos 30 dias"}</div>
+        ${barras(continua, 100, 104)}
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px">
+          <span class="tiny" style="display:flex;align-items:center;gap:5px;color:var(--ink-mute)"><i style="width:8px;height:8px;border-radius:2px;background:var(--good);display:inline-block"></i>boa, 67% ou mais</span>
+          <span class="tiny" style="display:flex;align-items:center;gap:5px;color:var(--ink-mute)"><i style="width:8px;height:8px;border-radius:2px;background:var(--warn);display:inline-block"></i>moderada, 34 a 66%</span>
+          <span class="tiny" style="display:flex;align-items:center;gap:5px;color:var(--ink-mute)"><i style="width:8px;height:8px;border-radius:2px;background:var(--crit);display:inline-block"></i>baixa, abaixo de 34%</span>
+        </div>
+        <p class="tiny mute" style="margin:8px 0 0">Colunas apagadas sao dias sem registro. A escala vai de 0 a 100%.</p>
+      </div>` : ""}
+  </div>
+
+  ${alertas.length ? `
+    <div class="section-label"><span>Vigilancia do Watson</span></div>
+    ${alertas.map((a) => `<div class="card alert">
+      <span class="glyph" style="color:var(--${a.tom === "crit" ? "crit" : a.tom === "warn" ? "warn" : "good"})">${a.tom === "good" ? ICO.check : ICO.alert}</span>
+      <div><b>${esc(a.titulo)}</b><p>${esc(a.texto)}</p></div>
+    </div>`).join("")}
+    <p class="tiny mute" style="margin:10px 2px 0">O Watson le numeros, nao diagnostica. Sinais persistentes merecem um medico.</p>
+  ` : ""}
+
+  <div class="section-label"><span>Indicadores no periodo</span></div>
+  ${METRICAS_PRINCIPAIS.map((campo) => {
+    const r = resumirMetrica(campo, dias, anteriores);
+    if (!r.amostras) return "";
+    const meta = METRICAS[campo];
+    const sobe = (r.variacao || 0) > 0;
+    return `<div class="card">
+      <div class="tiny mute" style="letter-spacing:.04em">${esc(meta.rotulo)}</div>
+      <div class="metric" style="margin-top:3px">
+        <b class="num">${r.media.toFixed(meta.dec)}</b>
+        <u>${esc(meta.unidade)}</u>
+        ${r.variacao !== null && Math.abs(r.variacao) >= 1 ? `<span class="delta">${sobe ? "+" : "-"}${Math.abs(Math.round(r.variacao))}%</span>` : ""}
+      </div>
+      <p class="tiny mute" style="margin:3px 0 10px">media de ${r.amostras} dia${r.amostras > 1 ? "s" : ""} · minimo ${r.minimo.toFixed(meta.dec)} · maximo ${r.maximo.toFixed(meta.dec)}</p>
+      ${dias.length > 2 ? sparkline(dias.map((d) => d[campo])) : ""}
+    </div>`;
+  }).join("")}
+
+  ${impactos.length ? `
+    <div class="section-label"><span>Agenda cruzada com recuperacao</span></div>
+    <div class="card">
+      <p class="tiny mute" style="margin:0 0 14px">Recuperacao no dia seguinte a cada reuniao recorrente, comparada com a sua media do periodo. E um indicio para investigar, nao uma prova de causa.</p>
+      ${impactos.map((i, k) => `<div style="display:flex;align-items:center;gap:12px;padding:9px 0${k ? ";border-top:1px solid var(--line)" : ""}">
+        <div style="flex:1;min-width:0">
+          <b style="font-size:14px;display:block">${esc(i.titulo)}</b>
+          <p class="tiny mute" style="margin:2px 0 0">${i.ocorrencias} ocorrencias · recuperacao seguinte ${Math.round(i.recuperacaoSeguinte)}%</p>
+        </div>
+        <span class="pill ${i.delta < -3 ? "crit" : i.delta > 3 ? "good" : ""}">${i.delta > 0 ? "+" : ""}${i.delta.toFixed(1)} pts</span>
+      </div>`).join("")}
+    </div>
+  ` : ""}
+  `;
+}
+
+/* ===================== DOSSIES ===================== */
+function viewDossies() {
+  const lista = S.busca.trim().length >= 3
+    ? buscarDossies(S.busca)
+    : (S.filtroEmpresa === "todas" ? S.dossies : S.dossies.filter((d) => d.empresa === S.filtroEmpresa));
+
+  const contagem = {};
+  for (const d of S.dossies) contagem[d.empresa] = (contagem[d.empresa] || 0) + 1;
+  const buscando = S.busca.trim().length >= 3;
+
+  return `
+  <div class="head">
+    <div class="head-text">
+      <div class="eyebrow">Base de conhecimento</div>
+      <h1>Dossies</h1>
+    </div>
+    <button class="add" data-novo-dossie aria-label="Adicionar dossie">${ICO.plus}</button>
+  </div>
+
+  <div class="search">
+    <span class="mute">${ICO.search}</span>
+    <input id="campo-busca" type="search" placeholder="Buscar por assunto, pessoa ou decisao" value="${esc(S.busca)}" autocomplete="off">
+    ${S.busca ? `<button data-limpar-busca class="mute" aria-label="Limpar busca">${ICO.close}</button>` : ""}
+  </div>
+
+  ${!buscando ? `<div class="chips">
+    <button class="chip" data-empresa="todas" aria-pressed="${S.filtroEmpresa === "todas"}">Todas${S.dossies.length ? ` (${S.dossies.length})` : ""}</button>
+    ${EMPRESAS.map((e) => `<button class="chip" data-empresa="${e.id}" aria-pressed="${S.filtroEmpresa === e.id}">${esc(e.curto)}${contagem[e.id] ? ` (${contagem[e.id]})` : ""}</button>`).join("")}
+  </div>` : ""}
+
+  ${lista.length ? lista.map((d) => `
+    <button class="card dossier" style="width:100%;text-align:left;display:block" data-abrir-dossie="${esc(d.id)}">
+      <div class="meta">
+        <span class="pill">${esc(empresaCurto(d.empresa))}</span>
+        <span class="tiny mute num">${esc(d.data)}</span>
+      </div>
+      <h3>${esc(d.titulo)}</h3>
+      <p>${esc(String(d.resumo || "").slice(0, 190))}${String(d.resumo || "").length > 190 ? "..." : ""}</p>
+      ${(d.temas || []).length ? `<div class="topics">${(d.temas || []).slice(0, 5).map((t) => `<span class="topic">${esc(t)}</span>`).join("")}</div>` : ""}
+    </button>`).join("") : `
+    <div class="empty">
+      <div class="mark">${buscando ? ICO.search : ICO.books}</div>
+      <h3>${buscando ? "Nada encontrado" : "A base esta vazia"}</h3>
+      <p>${buscando ? "Nenhum dossie casa com esses termos. Tente outras palavras ou limpe a busca." : "Cole aqui os resumos das suas reunioes. Cada uma vira um dossie classificado, e o Watson passa a responder perguntas sobre tudo o que foi tratado."}</p>
+      ${buscando ? "" : '<div style="height:18px"></div><button class="btn ghost" data-novo-dossie>Adicionar o primeiro</button>'}
+    </div>`}
+  `;
+}
+
+/* ===================== AJUSTES ===================== */
+function viewAjustes() {
+  const registros = S.eventos.length + S.aniversarios.length + S.saude.length + S.dossies.length;
+  return `
+  <div class="head">
+    <div class="head-text">
+      <div class="eyebrow">Configuracoes</div>
+      <h1>Ajustes</h1>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;gap:26px;flex-wrap:wrap">
+      <div><b class="num" style="font-family:var(--serif);font-size:23px;display:block">${S.eventos.length}</b><span class="tiny mute">eventos</span></div>
+      <div><b class="num" style="font-family:var(--serif);font-size:23px;display:block">${S.aniversarios.length}</b><span class="tiny mute">aniversarios</span></div>
+      <div><b class="num" style="font-family:var(--serif);font-size:23px;display:block">${S.saude.length}</b><span class="tiny mute">dias de saude</span></div>
+      <div><b class="num" style="font-family:var(--serif);font-size:23px;display:block">${S.dossies.length}</b><span class="tiny mute">dossies</span></div>
+    </div>
+    ${S.demonstracao ? '<hr class="rule"><p class="tiny" style="color:var(--warn);margin:0">Os numeros acima sao do exemplo. Some assim que voce registrar algo real.</p>' : ""}
+  </div>
+
+  <div class="section-label"><span>Backup</span></div>
+  <div class="card">
+    <p class="small dim" style="margin:0 0 6px">Seus dados ficam guardados na sua conta. Um backup serve para voce ter uma copia fora daqui, em arquivo, que pode abrir em qualquer planilha ou editor.</p>
+    <p class="tiny mute" style="margin:0 0 14px">${registros} ${registros === 1 ? "registro" : "registros"} seriam exportados.</p>
+    <button class="btn ghost" data-exportar>${ICO.down} Baixar copia dos meus dados</button>
+  </div>
+
+  <div class="section-label"><span>Como o Watson trata seus dados</span></div>
+  <div class="card" style="display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;gap:11px;align-items:flex-start">
+      <span style="color:var(--brass);flex:none;margin-top:1px">${ICO.lock}</span>
+      <p class="tiny dim" style="margin:0">Agenda, saude e dossies ficam na sua conta Claude. Esta pagina nasceu privada: ninguem abre sem voce compartilhar o link.</p>
+    </div>
+    <div style="display:flex;gap:11px;align-items:flex-start">
+      <span style="color:var(--brass);flex:none;margin-top:1px">${ICO.glass}</span>
+      <p class="tiny dim" style="margin:0">Quando voce pergunta algo, o Watson consulta a sua base e envia apenas os trechos relacionados. Cada resposta mostra embaixo o que foi consultado.</p>
+    </div>
+    <div style="display:flex;gap:11px;align-items:flex-start">
+      <span style="color:var(--brass);flex:none;margin-top:1px">${ICO.alert}</span>
+      <p class="tiny dim" style="margin:0">Os indicadores de saude servem para observar tendencias. O Watson nao diagnostica nada, e um sinal que persiste e assunto para um medico.</p>
+    </div>
+  </div>
+
+  <div class="section-label"><span>Resumo diario</span></div>
+  <div class="card">
+    <p class="small dim" style="margin:0 0 6px">Toda manha voce recebe o resumo do dia com reunioes, aniversarios e alertas de saude, sem precisar abrir esta pagina.</p>
+    <p class="tiny mute" style="margin:0">Se quiser mudar o horario ou parar de receber, e so pedir na conversa com o Claude.</p>
+  </div>
+
+  <p class="tiny mute" style="text-align:center;margin-top:26px">Watson · assistente pessoal e corporativo</p>
+  `;
+}
+</script>
+<script>
+"use strict";
+
+/* ---------- painel deslizante ---------- */
+let fecharPainelAtual = null;
+
+function abrirPainel({ titulo, subtitulo, corpo, rodape, aoMontar }) {
+  fecharPainel();
+  const host = $("#panel-host");
+  host.innerHTML = `
+    <div class="scrim" role="dialog" aria-modal="true" aria-label="${esc(titulo)}">
+      <div class="panel">
+        <div class="panel-grip"></div>
+        <div class="panel-head">
+          <div style="flex:1;min-width:0"><h2>${esc(titulo)}</h2>${subtitulo ? `<p>${esc(subtitulo)}</p>` : ""}</div>
+          <button class="panel-close" data-fechar aria-label="Fechar">${ICO.close}</button>
+        </div>
+        <div class="panel-body">${corpo}</div>
+        ${rodape ? `<div class="panel-foot">${rodape}</div>` : ""}
+      </div>
+    </div>`;
+
+  const scrim = $(".scrim", host);
+  scrim.addEventListener("mousedown", (e) => { if (e.target === scrim) fecharPainel(); });
+  liga(host, "[data-fechar]", "click", fecharPainel);
+  document.addEventListener("keydown", aoEsc);
+  if (aoMontar) aoMontar(host);
+  const foco = $("input, textarea, button", $(".panel-body", host));
+  if (foco && foco.tagName !== "BUTTON") setTimeout(() => foco.focus(), 60);
+  fecharPainelAtual = () => { host.innerHTML = ""; document.removeEventListener("keydown", aoEsc); fecharPainelAtual = null; };
+}
+
+function aoEsc(e) { if (e.key === "Escape") fecharPainel(); }
+function fecharPainel() { if (fecharPainelAtual) fecharPainelAtual(); }
+
+const campo = (id, rotulo, extra = {}) => `
+  <label class="field" for="${id}"><span>${esc(rotulo)}</span>
+    ${extra.area
+      ? `<textarea id="${id}" placeholder="${esc(extra.ph || "")}" ${extra.alto ? 'style="min-height:' + extra.alto + 'px"' : ""}>${esc(extra.v || "")}</textarea>`
+      : `<input id="${id}" type="${extra.tipo || "text"}" placeholder="${esc(extra.ph || "")}" value="${esc(extra.v || "")}" ${extra.modo ? `inputmode="${extra.modo}"` : ""} ${extra.max ? `maxlength="${extra.max}"` : ""}>`}
+    ${extra.dica ? `<span class="hint">${esc(extra.dica)}</span>` : ""}
+  </label>`;
+
+const grupoChips = (nome, opcoes, ativo) => `
+  <div class="chips" data-grupo="${nome}">
+    ${opcoes.map((o) => `<button type="button" class="chip" data-valor="${esc(o.id)}" aria-pressed="${String(o.id) === String(ativo)}">${esc(o.rotulo)}</button>`).join("")}
+  </div>`;
+
+function ativarGrupos(host) {
+  liga(host, "[data-grupo] .chip", "click", (e) => {
+    const grupo = e.currentTarget.closest("[data-grupo]");
+    const multi = grupo.dataset.multi === "1";
+    if (multi) {
+      const p = e.currentTarget.getAttribute("aria-pressed") === "true";
+      e.currentTarget.setAttribute("aria-pressed", String(!p));
+    } else {
+      $$(".chip", grupo).forEach((c) => c.setAttribute("aria-pressed", "false"));
+      e.currentTarget.setAttribute("aria-pressed", "true");
+    }
+  });
+}
+
+const lerGrupo = (host, nome) => {
+  const el = $(`[data-grupo="${nome}"] .chip[aria-pressed="true"]`, host);
+  return el ? el.dataset.valor : null;
+};
+const lerGrupoMulti = (host, nome) =>
+  $$(`[data-grupo="${nome}"] .chip[aria-pressed="true"]`, host).map((c) => Number(c.dataset.valor));
+
+const erroPainel = (host, msg) => {
+  const alvo = $("#erro-painel", host);
+  if (alvo) { alvo.textContent = msg; alvo.hidden = !msg; }
+};
+
+/* ---------- formulario de evento ---------- */
+const HORA_OK = /^([01]\d|2[0-3]):([0-5]\d)$/;
+function mascaraHora(v, antes) {
+  const d = v.replace(/\D/g, "").slice(0, 4);
+  if (v.length < antes.length && antes.endsWith(":")) return d.slice(0, 1);
+  return d.length <= 2 ? d : `${d.slice(0, 2)}:${d.slice(2)}`;
+}
+
+function painelEvento(existente) {
+  const ev = existente || null;
+  const base = ev ? new Date(ev.inicio) : S.diaSel;
+  const hIni = ev && !ev.diaInteiro ? hora(new Date(ev.inicio)) : "09:00";
+  const hFim = ev && ev.fim ? hora(new Date(ev.fim)) : (ev ? "" : "10:00");
+  const lembretes = (ev && ev.lembretes) || [60];
+
+  const corpo = `
+    ${campo("ev-titulo", "Titulo do evento", { ph: "Reuniao de diretoria", v: ev ? ev.titulo : "" })}
+    ${campo("ev-desc", "Descricao", { area: true, ph: "Pauta, participantes, o que precisa ser decidido", v: ev ? ev.descricao : "" })}
+    <div class="field"><span>Tipo</span>${grupoChips("cat", CATEGORIAS.map((c) => ({ id: c.id, rotulo: c.rotulo })), ev ? ev.categoria : "reuniao")}</div>
+    <div class="field"><span>Empresa do grupo</span>${grupoChips("emp", [{ id: "", rotulo: "Nenhuma" }].concat(EMPRESAS.map((e) => ({ id: e.id, rotulo: e.curto }))), ev ? (ev.empresa || "") : "")}</div>
+    ${campo("ev-local", "Local", { ph: "Sala, endereco ou link", v: ev ? ev.local : "" })}
+    <div class="field"><span>Horario</span>${grupoChips("inteiro", [{ id: "nao", rotulo: "Com horario" }, { id: "sim", rotulo: "Dia inteiro" }], ev && ev.diaInteiro ? "sim" : "nao")}</div>
+    <div class="field-row" id="linha-horas">
+      ${campo("ev-ini", "Comeca", { v: hIni, ph: "09:00", modo: "numeric", max: 5 })}
+      ${campo("ev-fim", "Termina", { v: hFim, ph: "10:00", modo: "numeric", max: 5 })}
+    </div>
+    <div class="field"><span>Repeticao</span>${grupoChips("rec", RECORRENCIAS.map((r) => ({ id: r.id, rotulo: r.rotulo })), ev ? ev.recorrencia : "unico")}</div>
+    ${campo("ev-ate", "Repetir ate (opcional)", { ph: "AAAA-MM-DD", v: ev ? ev.ate : "", dica: "Deixe vazio para repetir sem data final." })}
+    <div class="field"><span>Lembretes</span>
+      <div class="chips" data-grupo="lem" data-multi="1">
+        ${LEMBRETES.map((l) => `<button type="button" class="chip" data-valor="${l.m}" aria-pressed="${lembretes.includes(l.m)}">${esc(l.r)}</button>`).join("")}
+      </div>
+      <span class="hint">O Watson mostra o que esta proximo ao abrir, e inclui no seu resumo da manha.</span>
+    </div>
+    <p class="err" id="erro-painel" hidden></p>`;
+
+  const rodape = `
+    <button class="btn" id="salvar-ev">${ev ? "Salvar alteracoes" : "Adicionar a agenda"}</button>
+    ${ev ? '<button class="btn danger" id="excluir-ev">Excluir evento</button>' : ""}`;
+
+  abrirPainel({
+    titulo: ev ? "Editar evento" : "Novo evento",
+    subtitulo: dataLonga(base),
+    corpo, rodape,
+    aoMontar(host) {
+      ativarGrupos(host);
+      const alternarHoras = () => { $("#linha-horas", host).hidden = lerGrupo(host, "inteiro") === "sim"; };
+      alternarHoras();
+      liga(host, '[data-grupo="inteiro"] .chip', "click", alternarHoras);
+      ["ev-ini", "ev-fim"].forEach((id) => {
+        const el = $("#" + id, host);
+        let antes = el.value;
+        el.addEventListener("input", () => { el.value = mascaraHora(el.value, antes); antes = el.value; });
+      });
+
+      $("#salvar-ev", host).addEventListener("click", async () => {
+        const titulo = $("#ev-titulo", host).value.trim();
+        const inteiro = lerGrupo(host, "inteiro") === "sim";
+        const ini = $("#ev-ini", host).value.trim();
+        const fim = $("#ev-fim", host).value.trim();
+
+        if (titulo.length < 2) return erroPainel(host, "Escreva um titulo para o evento.");
+        if (!inteiro && !HORA_OK.test(ini)) return erroPainel(host, "Hora de inicio invalida. Use o formato HH:MM.");
+        if (!inteiro && fim && !HORA_OK.test(fim)) return erroPainel(host, "Hora de termino invalida.");
+
+        const dia = ev ? new Date(ev.inicio) : S.diaSel;
+        const montar = (hhmm) => { const d = new Date(dia); const [h, m] = hhmm.split(":").map(Number); d.setHours(h || 0, m || 0, 0, 0); return d; };
+        const dIni = inteiro ? montar("00:00") : montar(ini);
+        const dFim = inteiro || !fim ? null : montar(fim);
+        if (dFim && dFim <= dIni) return erroPainel(host, "O termino precisa ser depois do inicio.");
+
+        const rec = lerGrupo(host, "rec") || "unico";
+        const dados = {
+          titulo,
+          descricao: $("#ev-desc", host).value.trim(),
+          categoria: lerGrupo(host, "cat") || "reuniao",
+          empresa: lerGrupo(host, "emp") || "",
+          local: $("#ev-local", host).value.trim(),
+          inicio: dIni.toISOString(),
+          fim: dFim ? dFim.toISOString() : null,
+          diaInteiro: inteiro,
+          recorrencia: rec,
+          ate: rec !== "unico" ? $("#ev-ate", host).value.trim() : "",
+          lembretes: lerGrupoMulti(host, "lem"),
+          criadoEm: ev ? ev.criadoEm : new Date().toISOString(),
+        };
+
+        await salvar("eventos", ev ? ev.id : novoId(), dados);
+        fecharPainel();
+        render();
+      });
+
+      const btnEx = $("#excluir-ev", host);
+      if (btnEx) btnEx.addEventListener("click", () => confirmarExclusao(`"${ev.titulo}" sai da agenda, junto de todas as repeticoes.`, async () => {
+        await remover("eventos", ev.id); fecharPainel(); render();
+      }));
+    },
+  });
+}
+
+/* ---------- confirmacao ----------
+   O viewer nao mostra confirm() do navegador, entao a pergunta vive na
+   propria pagina. */
+function confirmarExclusao(texto, aoConfirmar) {
+  abrirPainel({
+    titulo: "Confirmar exclusao",
+    corpo: `<p class="small dim" style="margin:0">${esc(texto)} Isso nao pode ser desfeito.</p>`,
+    rodape: `<button class="btn danger" id="conf-sim">Excluir mesmo assim</button><button class="btn bare" data-fechar>Cancelar</button>`,
+    aoMontar(host) { $("#conf-sim", host).addEventListener("click", aoConfirmar); },
+  });
+}
+
+/* ---------- formulario de aniversario ---------- */
+const DIAMES_OK = /^(0[1-9]|[12]\d|3[01])\/(0[1-9]|1[0-2])$/;
+function mascaraDiaMes(v, antes) {
+  const d = v.replace(/\D/g, "").slice(0, 4);
+  if (v.length < antes.length && antes.endsWith("/")) return d.slice(0, 1);
+  return d.length <= 2 ? d : `${d.slice(0, 2)}/${d.slice(2)}`;
+}
+
+function painelAniversario(existente) {
+  const b = existente || null;
+  const lembretes = (b && b.lembretes) || [10080, 1440];
+
+  const corpo = `
+    ${campo("an-nome", "Nome da pessoa", { ph: "Nome completo", v: b ? b.nome : "" })}
+    <div class="field-row">
+      ${campo("an-data", "Dia e mes", { ph: "DD/MM", v: b ? `${pad(b.dia)}/${pad(b.mes)}` : "", modo: "numeric", max: 5, dica: "Por exemplo 07/09." })}
+      ${campo("an-ano", "Ano (opcional)", { ph: "1975", v: b && b.ano ? b.ano : "", modo: "numeric", max: 4, dica: "Para calcular a idade." })}
+    </div>
+    ${campo("an-rel", "Relacao", { ph: "Socio, cliente, familia, equipe", v: b ? b.relacao : "" })}
+    ${campo("an-notas", "Observacoes", { area: true, ph: "O que lembrar na hora de cumprimentar", v: b ? b.notas : "" })}
+    <div class="field"><span>Lembretes</span>
+      <div class="chips" data-grupo="lem" data-multi="1">
+        ${LEMBRETES.map((l) => `<button type="button" class="chip" data-valor="${l.m}" aria-pressed="${lembretes.includes(l.m)}">${esc(l.r)}</button>`).join("")}
+      </div>
+    </div>
+    <p class="err" id="erro-painel" hidden></p>`;
+
+  abrirPainel({
+    titulo: b ? "Editar aniversario" : "Novo aniversario",
+    subtitulo: "O Watson avisa com a antecedencia que voce escolher.",
+    corpo,
+    rodape: `<button class="btn" id="salvar-an">${b ? "Salvar alteracoes" : "Adicionar aniversario"}</button>${b ? '<button class="btn danger" id="excluir-an">Excluir</button>' : ""}`,
+    aoMontar(host) {
+      ativarGrupos(host);
+      const el = $("#an-data", host);
+      let antes = el.value;
+      el.addEventListener("input", () => { el.value = mascaraDiaMes(el.value, antes); antes = el.value; });
+
+      $("#salvar-an", host).addEventListener("click", async () => {
+        const nome = $("#an-nome", host).value.trim();
+        const data = $("#an-data", host).value.trim();
+        const anoTxt = $("#an-ano", host).value.trim();
+        if (nome.length < 2) return erroPainel(host, "Escreva o nome da pessoa.");
+        if (!DIAMES_OK.test(data)) return erroPainel(host, "Informe o dia e o mes no formato DD/MM.");
+        const ano = anoTxt ? Number(anoTxt) : null;
+        if (ano !== null && (ano < 1900 || ano > new Date().getFullYear())) return erroPainel(host, "Ano de nascimento invalido.");
+
+        const [dia, mes] = data.split("/").map(Number);
+        await salvar("aniversarios", b ? b.id : novoId(), {
+          nome, dia, mes, ano,
+          relacao: $("#an-rel", host).value.trim(),
+          notas: $("#an-notas", host).value.trim(),
+          lembretes: lerGrupoMulti(host, "lem"),
+        });
+        fecharPainel();
+        render();
+      });
+
+      const btnEx = $("#excluir-an", host);
+      if (btnEx) btnEx.addEventListener("click", () => confirmarExclusao(`${b.nome} sai da lista de aniversarios.`, async () => {
+        await remover("aniversarios", b.id); fecharPainel(); render();
+      }));
+    },
+  });
+}
+</script>
+<script>
+"use strict";
+
+/* ---------- relatorio do Whoop ----------
+   A leitura automatica sempre termina em uma tela de conferencia: a IA
+   separa os numeros depressa, mas quem assina os dados e o usuario. */
+const CAMPOS_SAUDE = ["recuperacao", "vfc", "fcRepouso", "sono", "desempenhoSono", "esforco", "calorias", "respiracao", "oxigenacao", "temperatura"];
+const DATA_OK = /^\d{4}-\d{2}-\d{2}$/;
+
+function painelRelatorio(existente) {
+  let etapa = existente ? "conferir" : "colar";
+  let valores = {};
+  let dataAlvo = existente ? existente.data : hojeISO();
+  let bruto = "";
+
+  if (existente) for (const c of CAMPOS_SAUDE) if (ehNum(existente[c])) valores[c] = String(existente[c]);
+
+  function desenhar() {
+    const corpoColar = `
+      <div class="banner">${ICO.info}<span>No aplicativo do Whoop, abra o resumo do dia, copie o texto e cole aqui. Pode colar tudo: o Watson separa o que interessa.</span></div>
+      <div style="height:14px"></div>
+      <label class="field" for="wh-texto"><span>Relatorio</span>
+        <textarea id="wh-texto" style="min-height:190px" placeholder="Exemplo:&#10;Recovery 62%&#10;HRV 48 ms&#10;RHR 54 bpm&#10;Sleep 6h45 / 88% performance&#10;Day Strain 13.4">${esc(bruto)}</textarea>
+      </label>
+      <p class="err" id="erro-painel" hidden></p>`;
+
+    const corpoConferir = `
+      ${campo("wh-data", "Data do relatorio", { ph: "AAAA-MM-DD", v: dataAlvo })}
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        ${CAMPOS_SAUDE.map((c) => `<div style="width:47%;flex-grow:1;min-width:130px">
+          ${campo("wh-" + c, METRICAS[c].rotulo + (METRICAS[c].unidade ? ` (${METRICAS[c].unidade})` : ""), { ph: "--", v: valores[c] || "", modo: "decimal" })}
+        </div>`).join("")}
+      </div>
+      <p class="err" id="erro-painel" hidden></p>`;
+
+    const preenchidos = CAMPOS_SAUDE.filter((c) => valores[c]).length;
+
+    abrirPainel({
+      titulo: etapa === "colar" ? "Novo relatorio do Whoop" : "Conferir indicadores",
+      subtitulo: etapa === "colar"
+        ? "Cole o texto do aplicativo e deixe o Watson separar os numeros."
+        : `${preenchidos} ${preenchidos === 1 ? "indicador lido" : "indicadores lidos"}. Corrija o que estiver errado.`,
+      corpo: etapa === "colar" ? corpoColar : corpoConferir,
+      rodape: etapa === "colar"
+        ? `<button class="btn" id="wh-ler">${ICO.spark} Ler com o Watson</button><button class="btn bare" id="wh-manual">Preencher manualmente</button>`
+        : `<button class="btn" id="wh-salvar">Salvar no meu historico</button>${existente ? `<button class="btn danger" id="wh-excluir">Excluir este dia</button>` : `<button class="btn bare" id="wh-voltar">Voltar ao texto</button>`}`,
+      aoMontar(host) {
+        if (etapa === "colar") {
+          $("#wh-manual", host).addEventListener("click", () => { bruto = $("#wh-texto", host).value; etapa = "conferir"; desenhar(); });
+          $("#wh-ler", host).addEventListener("click", async () => {
+            bruto = $("#wh-texto", host).value.trim();
+            if (bruto.length < 15) return erroPainel(host, "Cole o relatorio do Whoop antes de continuar.");
+            if (!S.sample) { erroPainel(host, "A leitura automatica nao esta disponivel aqui. Preencha os campos na mao."); etapa = "conferir"; return desenhar(); }
+
+            const botao = $("#wh-ler", host);
+            botao.disabled = true;
+            botao.innerHTML = '<span class="spin"></span> Lendo';
+            try {
+              const r = await S.sample.json(
+                `Extraia os indicadores de saude deste relatorio do Whoop e devolva SOMENTE um objeto JSON.
+
+Chaves possiveis, todas opcionais: data (AAAA-MM-DD), recuperacao (0 a 100), vfc (ms), fcRepouso (bpm), sono (horas decimais, 7h30 vira 7.5), desempenhoSono (0 a 100), esforco (escala Whoop de 0 a 21), calorias, respiracao (por minuto), oxigenacao (0 a 100), temperatura (Celsius).
+
+Regras: use apenas numeros que estao escritos no texto; nunca estime nem complete. Omita a chave quando o indicador nao aparecer. Ausente e sempre melhor que um palpite.
+
+Relatorio:
+${bruto.slice(0, 6000)}`,
+                { modelTier: "quick", cache: false },
+              );
+              if (r && typeof r === "object") {
+                for (const c of CAMPOS_SAUDE) if (ehNum(r[c])) valores[c] = String(r[c]);
+                if (typeof r.data === "string" && DATA_OK.test(r.data)) dataAlvo = r.data;
+              }
+              etapa = "conferir";
+              desenhar();
+            } catch (e) {
+              const cod = e && e.code;
+              etapa = "conferir";
+              desenhar();
+              const h2 = $("#panel-host");
+              erroPainel(h2, cod === "not_granted"
+                ? "Voce recusou o acesso ao Claude. Preencha os campos na mao."
+                : "A leitura falhou. Confira ou preencha os campos manualmente.");
+            }
+          });
+        } else {
+          $("#wh-salvar", host).addEventListener("click", async () => {
+            const data = $("#wh-data", host).value.trim();
+            if (!DATA_OK.test(data)) return erroPainel(host, "Informe a data no formato AAAA-MM-DD.");
+            const dados = { data, fonte: "whoop", textoBruto: bruto ? bruto.slice(0, 4000) : "" };
+            let algum = false;
+            for (const c of CAMPOS_SAUDE) {
+              const v = ($("#wh-" + c, host).value || "").replace(",", ".").trim();
+              if (v && !Number.isNaN(Number(v))) { dados[c] = Number(v); algum = true; }
+            }
+            if (!algum) return erroPainel(host, "Preencha ao menos um indicador.");
+            if (existente && existente.data !== data) await remover("saude", existente.id);
+            await salvar("saude", data, dados);
+            fecharPainel();
+            render();
+          });
+          const voltar = $("#wh-voltar", host);
+          if (voltar) voltar.addEventListener("click", () => { etapa = "colar"; desenhar(); });
+          const excluir = $("#wh-excluir", host);
+          if (excluir) excluir.addEventListener("click", () => confirmarExclusao(`Os indicadores de ${existente.data} serao apagados.`, async () => {
+            await remover("saude", existente.id); fecharPainel(); render();
+          }));
+        }
+      },
+    });
+  }
+  desenhar();
+}
+
+/* ---------- dossie ---------- */
+function painelDossie(existente) {
+  const d = existente || null;
+  let etapa = d ? "conferir" : "colar";
+  let bruto = d ? (d.textoBruto || "") : "";
+  let campos = d ? {
+    titulo: d.titulo, empresa: d.empresa, data: d.data,
+    participantes: (d.participantes || []).join(", "),
+    temas: (d.temas || []).join(", "),
+    resumo: d.resumo, decisoes: d.decisoes || "", acoes: d.acoes || "",
+  } : { titulo: "", empresa: "grupo", data: hojeISO(), participantes: "", temas: "", resumo: "", decisoes: "", acoes: "" };
+
+  function desenhar() {
+    const corpoColar = `
+      <div class="banner">${ICO.info}<span>Cole o resumo da reuniao, do Plaud ou de onde vier. O Watson identifica titulo, empresa do grupo, participantes, decisoes e acoes, e guarda o texto original junto.</span></div>
+      <div style="height:14px"></div>
+      <label class="field" for="do-bruto"><span>Resumo ou transcricao</span>
+        <textarea id="do-bruto" style="min-height:210px" placeholder="Cole aqui o resumo da reuniao">${esc(bruto)}</textarea>
+      </label>
+      <p class="err" id="erro-painel" hidden></p>`;
+
+    const corpoConferir = `
+      ${campo("do-titulo", "Titulo do dossie", { ph: "Reuniao de diretoria sobre o contrato", v: campos.titulo })}
+      <div class="field"><span>Empresa do grupo</span>${grupoChips("emp", EMPRESAS.map((e) => ({ id: e.id, rotulo: e.curto })), campos.empresa)}</div>
+      ${campo("do-data", "Data da reuniao", { ph: "AAAA-MM-DD", v: campos.data })}
+      ${campo("do-part", "Participantes", { ph: "Separados por virgula", v: campos.participantes })}
+      ${campo("do-temas", "Temas", { ph: "contrato, sinalizacao, prazo", v: campos.temas, dica: "Separados por virgula. Sao eles que orientam a busca." })}
+      ${campo("do-resumo", "Resumo", { area: true, alto: 140, ph: "O que foi tratado", v: campos.resumo })}
+      ${campo("do-dec", "Decisoes", { area: true, ph: "Uma decisao por linha", v: campos.decisoes })}
+      ${campo("do-acoes", "Acoes combinadas", { area: true, ph: "Responsavel, o que fazer e prazo", v: campos.acoes })}
+      <p class="err" id="erro-painel" hidden></p>`;
+
+    abrirPainel({
+      titulo: d ? "Editar dossie" : etapa === "colar" ? "Novo resumo de reuniao" : "Conferir dossie",
+      subtitulo: etapa === "colar"
+        ? "Cole o resumo e o Watson classifica empresa, participantes e temas."
+        : "Confira a classificacao. E ela que o Watson usa para achar a resposta depois.",
+      corpo: etapa === "colar" ? corpoColar : corpoConferir,
+      rodape: etapa === "colar"
+        ? `<button class="btn" id="do-org">${ICO.spark} Organizar com o Watson</button><button class="btn bare" id="do-manual">Preencher manualmente</button>`
+        : `<button class="btn" id="do-salvar">${d ? "Salvar alteracoes" : "Guardar na base"}</button>${d ? "" : '<button class="btn bare" id="do-voltar">Voltar ao texto</button>'}`,
+      aoMontar(host) {
+        if (etapa === "colar") {
+          $("#do-manual", host).addEventListener("click", () => {
+            bruto = $("#do-bruto", host).value;
+            campos.resumo = campos.resumo || bruto.trim();
+            etapa = "conferir"; desenhar();
+          });
+          $("#do-org", host).addEventListener("click", async () => {
+            bruto = $("#do-bruto", host).value.trim();
+            if (bruto.length < 30) return erroPainel(host, "Cole o resumo da reuniao antes de continuar.");
+            if (!S.sample) { campos.resumo = bruto; etapa = "conferir"; return desenhar(); }
+
+            const botao = $("#do-org", host);
+            botao.disabled = true;
+            botao.innerHTML = '<span class="spin"></span> Organizando';
+            try {
+              const r = await S.sample.json(
+                `Organize este resumo de reuniao para a base de conhecimento de um grupo empresarial brasileiro do setor aeroportuario. Devolva SOMENTE um objeto JSON.
+
+Chaves: titulo (curto e especifico), empresa (exatamente um de: industria, engenharia, administracao, software, grupo, externo), data (AAAA-MM-DD, omita se o texto nao trouxer), participantes (lista de nomes), temas (de tres a seis, minusculos, uma ou duas palavras cada), resumo (objetivo, do que foi tratado), decisoes (uma por linha, string), acoes (responsavel, o que fazer e prazo, uma por linha, string).
+
+O que cada empresa significa: industria = equipamentos de sinalizacao de pista; engenharia = engenharia aeroportuaria; administracao = administracao de aeroportos; software = tecnologia de gestao aeroportuaria; grupo = holding e assuntos transversais; externo = parceiros, clientes e fornecedores.
+
+Trabalhe apenas com o que esta no texto. Nao invente participantes, decisoes, prazos nem numeros. Escreva em portugues do Brasil.
+
+Resumo:
+${bruto.slice(0, 20000)}`,
+                { cache: false },
+              );
+              if (r && typeof r === "object") {
+                campos.titulo = r.titulo || "";
+                if (EMPRESAS.some((e) => e.id === r.empresa)) campos.empresa = r.empresa;
+                if (typeof r.data === "string" && DATA_OK.test(r.data)) campos.data = r.data;
+                campos.participantes = Array.isArray(r.participantes) ? r.participantes.join(", ") : "";
+                campos.temas = Array.isArray(r.temas) ? r.temas.join(", ") : "";
+                campos.resumo = r.resumo || bruto;
+                campos.decisoes = typeof r.decisoes === "string" ? r.decisoes : "";
+                campos.acoes = typeof r.acoes === "string" ? r.acoes : "";
+              }
+              etapa = "conferir"; desenhar();
+            } catch (e) {
+              campos.resumo = campos.resumo || bruto;
+              etapa = "conferir"; desenhar();
+              erroPainel($("#panel-host"), e && e.code === "not_granted"
+                ? "Voce recusou o acesso ao Claude. Preencha os campos na mao."
+                : "A organizacao automatica falhou. Preencha os campos manualmente.");
+            }
+          });
+        } else {
+          ativarGrupos(host);
+          $("#do-salvar", host).addEventListener("click", async () => {
+            const titulo = $("#do-titulo", host).value.trim();
+            const resumo = $("#do-resumo", host).value.trim();
+            const data = $("#do-data", host).value.trim();
+            if (titulo.length < 3) return erroPainel(host, "Escreva um titulo para o dossie.");
+            if (resumo.length < 10) return erroPainel(host, "O resumo esta muito curto.");
+            if (!DATA_OK.test(data)) return erroPainel(host, "Informe a data no formato AAAA-MM-DD.");
+
+            const lista = (s) => s.split(",").map((x) => x.trim()).filter(Boolean);
+            await salvar("dossies", d ? d.id : novoId(), {
+              titulo, data,
+              empresa: lerGrupo(host, "emp") || "grupo",
+              participantes: lista($("#do-part", host).value),
+              temas: lista($("#do-temas", host).value.toLowerCase()),
+              resumo,
+              decisoes: $("#do-dec", host).value.trim(),
+              acoes: $("#do-acoes", host).value.trim(),
+              textoBruto: bruto ? bruto.slice(0, 20000) : "",
+            });
+            fecharPainel();
+            render();
+          });
+          const voltar = $("#do-voltar", host);
+          if (voltar) voltar.addEventListener("click", () => { etapa = "colar"; desenhar(); });
+        }
+      },
+    });
+  }
+  desenhar();
+}
+
+function painelDetalheDossie(d) {
+  const bloco = (titulo, texto) => texto ? `<div style="margin-bottom:20px"><div class="eyebrow">${esc(titulo)}</div><p class="small" style="margin:0;white-space:pre-wrap;line-height:1.6">${esc(texto)}</p></div>` : "";
+  abrirPainel({
+    titulo: d.titulo,
+    subtitulo: `${empresaCurto(d.empresa)} · ${dataLonga(doDia(d.data))}`,
+    corpo: `
+      ${(d.participantes || []).length ? bloco("Participantes", (d.participantes || []).join(", ")) : ""}
+      ${bloco("Resumo", d.resumo)}
+      ${bloco("Decisoes", d.decisoes)}
+      ${bloco("Acoes combinadas", d.acoes)}
+      ${(d.temas || []).length ? `<div style="margin-bottom:20px"><div class="eyebrow">Temas</div><div class="topics">${(d.temas || []).map((t) => `<span class="topic">${esc(t)}</span>`).join("")}</div></div>` : ""}
+      ${d.textoBruto ? `<div><div class="eyebrow">Texto original</div><p class="tiny mute" style="margin:0;white-space:pre-wrap;line-height:1.55">${esc(d.textoBruto)}</p></div>` : ""}`,
+    rodape: `<button class="btn ghost" id="ed-dossie">Editar dossie</button><button class="btn danger" id="ex-dossie">Excluir da base</button>`,
+    aoMontar(host) {
+      $("#ed-dossie", host).addEventListener("click", () => painelDossie(d));
+      $("#ex-dossie", host).addEventListener("click", () => confirmarExclusao(`"${d.titulo}" sai da base de conhecimento.`, async () => {
+        await remover("dossies", d.id); fecharPainel(); render();
+      }));
+    },
+  });
+}
+</script>
+<script>
+"use strict";
+
+/* ---------- contexto enviado ao Watson ----------
+   Nem tudo vai junto de toda pergunta: a agenda proxima, a saude recente
+   e os dossies que casam com o que foi perguntado. Cada resposta mostra
+   embaixo o que foi consultado. */
+function montarContexto(pergunta) {
+  const agora = new Date();
+  const blocos = [];
+  const consultado = [];
+
+  const ocs = ocorrenciasEntre(S.eventos, somaDias(agora, -2), somaDias(agora, 14));
+  if (ocs.length) {
+    blocos.push("AGENDA, DE DOIS DIAS ATRAS ATE DUAS SEMANAS A FRENTE\n" + ocs.map((o) => {
+      const e = o.evento;
+      return `- ${dataLonga(o.inicio)}, ${e.diaInteiro ? "dia inteiro" : hora(o.inicio)}: ${e.titulo}${e.empresa ? ` [${empresaCurto(e.empresa)}]` : ""}${e.local ? `, em ${e.local}` : ""}${e.descricao ? ` - ${e.descricao}` : ""}`;
+    }).join("\n"));
+    consultado.push("agenda");
+  }
+
+  const recentes = S.saude.slice(-21);
+  if (recentes.length) {
+    const linhas = recentes.map((d) => {
+      const p = [];
+      if (ehNum(d.recuperacao)) p.push(`recuperacao ${Math.round(d.recuperacao)}%`);
+      if (ehNum(d.sono)) p.push(`sono ${d.sono.toFixed(1)}h`);
+      if (ehNum(d.vfc)) p.push(`VFC ${Math.round(d.vfc)}ms`);
+      if (ehNum(d.fcRepouso)) p.push(`FC repouso ${Math.round(d.fcRepouso)}bpm`);
+      if (ehNum(d.esforco)) p.push(`esforco ${d.esforco.toFixed(1)}`);
+      return `- ${d.data}: ${p.join(", ") || "sem dados"}`;
+    });
+    const alertas = avaliarSaude(recentes);
+    blocos.push("INDICADORES DE SAUDE DOS ULTIMOS DIAS\n" + linhas.join("\n") +
+      (alertas.length ? "\n\nSINAIS DETECTADOS PELO APLICATIVO\n" + alertas.map((a) => `- [${a.tom || "bom"}] ${a.titulo}: ${a.texto}`).join("\n") : ""));
+    consultado.push("saude");
+  }
+
+  const ocs90 = ocorrenciasEntre(S.eventos, somaDias(agora, -90), agora);
+  const corr = correlacaoCarga(ocs90, S.saude);
+  const imp = impactoReunioes(ocs90, S.saude);
+  if (corr || imp.length) {
+    const partes = [];
+    if (corr) partes.push(`Apos dias com mais de ${corr.limiar.toFixed(1)}h de reuniao, a recuperacao media no dia seguinte foi de ${Math.round(corr.pesado)}%. Apos os dias mais leves, foi de ${Math.round(corr.leve)}%. Base de ${corr.dias} dias.`);
+    if (imp.length) partes.push("CUSTO ESTIMADO POR REUNIAO RECORRENTE\n" + imp.slice(0, 5).map((i) => `- ${i.titulo}: recuperacao no dia seguinte ${i.delta > 0 ? "+" : ""}${i.delta.toFixed(1)} pontos contra a media, em ${i.ocorrencias} ocorrencias`).join("\n"));
+    blocos.push("ANALISE CRUZADA CALCULADA PELO APLICATIVO (indicio estatistico, nao prova de causa)\n" + partes.join("\n\n"));
+    consultado.push("cruzamento");
+  }
+
+  const anivs = aniversariosProximos().filter((a) => a.faltam <= 45);
+  if (anivs.length) {
+    blocos.push("ANIVERSARIOS PROXIMOS\n" + anivs.map((a) => `- ${a.b.nome}${a.b.relacao ? ` (${a.b.relacao})` : ""}: ${dataLonga(a.prox)}, em ${a.faltam} dias${a.idade ? `, completando ${a.idade} anos` : ""}`).join("\n"));
+    consultado.push("aniversarios");
+  }
+
+  const achados = S.busca || pergunta ? buscarDossies(pergunta).slice(0, 6) : [];
+  if (achados.length) {
+    blocos.push("REGISTROS DA BASE CORPORATIVA RELACIONADOS A PERGUNTA\n\n" + achados.map((d) => [
+      `### ${d.titulo}`,
+      `Empresa: ${empresaCurto(d.empresa)} | Data: ${d.data}`,
+      (d.participantes || []).length ? `Participantes: ${(d.participantes || []).join(", ")}` : "",
+      (d.temas || []).length ? `Temas: ${(d.temas || []).join(", ")}` : "",
+      `Resumo: ${d.resumo}`,
+      d.decisoes ? `Decisoes: ${d.decisoes}` : "",
+      d.acoes ? `Acoes: ${d.acoes}` : "",
+    ].filter(Boolean).join("\n")).join("\n\n"));
+    consultado.push(`${achados.length} ${achados.length > 1 ? "dossies" : "dossie"}`);
+  }
+
+  const agoraTxt = `Hoje e ${diaCompleto(new Date())} de ${new Date().getFullYear()}.`;
+  const texto = blocos.length ? `${agoraTxt}\n\nCONTEXTO DA BASE DO USUARIO\n\n${blocos.join("\n\n")}` : agoraTxt;
+  return { texto: texto.slice(0, 48000), consultado };
+}
+
+const INSTRUCOES = `Voce e o Watson, assistente pessoal e corporativo de um executivo brasileiro que preside um grupo empresarial do setor aeroportuario. O grupo reune quatro empresas: uma industria de equipamentos de sinalizacao de pista, uma empresa de engenharia aeroportuaria, uma administradora de aeroportos e uma empresa de tecnologia de software de gestao aeroportuaria.
+
+COMO VOCE FALA
+Portugues do Brasil, sempre. Sobrio, preciso e cordial, no registro de um secretario particular ingles experiente: nunca bajulador, nunca prolixo. Frases curtas, uma ideia por frase. Va direto a resposta antes de qualquer contexto.
+
+O QUE VOCE SABE
+Responda a partir do contexto que acompanha a pergunta, vindo da base do proprio usuario. Nunca invente um numero, uma data, um nome ou uma decisao. Se o contexto nao cobre a pergunta, diga o que falta e qual registro ele precisa adicionar.
+
+COMO VOCE PENSA
+Nao repita apenas o que esta no contexto. Cruze informacoes, aponte padroes, contradicoes e riscos que ele talvez nao tenha notado. Quando duas reunioes decidiram coisas incompativeis, diga. Quando os indicadores de saude contam uma historia que a agenda explica, conecte as duas coisas.
+
+SOBRE SAUDE
+Voce le indicadores, nao diagnostica. Pode sinalizar padroes preocupantes e recomendar procurar um medico. Nunca afirme uma doenca nem sugira medicamento.
+
+FORMATO
+Texto corrido curto. Lista apenas para itens realmente paralelos. Nada de titulos, markdown pesado ou emoji. Ao citar um dado, diga de onde veio, por exemplo "na reuniao de 12 de marco" ou "no seu registro de terca".`;
+
+const SUGESTOES = ["O que eu tenho hoje?", "Como esta minha semana de saude?", "Quais reunioes mais me desgastam?", "O que ficou decidido na industria?"];
+
+function painelConversa() {
+  let enviando = false;
+
+  function corpoConversa() {
+    if (!S.conversa.length) {
+      return `<div class="empty" style="padding-top:18px">
+        <div class="mark">${ICO.chat}</div>
+        <h3>As suas de sempre, senhor?</h3>
+        <p>O Watson responde a partir do que existe na sua base: agenda, saude, aniversarios e dossies. Quanto mais voce registra, mais ele enxerga.</p>
+      </div>
+      <div class="suggest">${SUGESTOES.map((s) => `<button data-sugestao="${esc(s)}">${esc(s)}</button>`).join("")}</div>`;
+    }
+    return `<div class="chat-log">${S.conversa.map((m) => {
+      const meu = m.papel === "eu";
+      return `<div class="turn ${meu ? "mine" : "theirs"}">
+        ${meu ? "" : `<div class="avatar">${ICO.glass}</div>`}
+        <div class="bubble">${esc(m.texto)}${m.consultado ? `<span class="src">consultou: ${esc(m.consultado)}</span>` : ""}</div>
+      </div>`;
+    }).join("")}
+    ${enviando ? `<div class="turn theirs"><div class="avatar">${ICO.glass}</div><div class="thinking"><span class="spin"></span> O Watson esta pensando</div></div>` : ""}
+    </div>`;
+  }
+
+  function desenhar(preencher = "") {
+    abrirPainel({
+      titulo: "Watson",
+      subtitulo: enviando ? "Consultando a sua base..." : "Pergunte sobre qualquer coisa da sua base",
+      corpo: corpoConversa(),
+      rodape: `
+        <p class="err" id="erro-painel" hidden></p>
+        <div class="composer" style="border:none;padding:0;margin:0">
+          <textarea id="chat-txt" placeholder="Pergunte ao Watson" rows="1">${esc(preencher)}</textarea>
+          <button id="chat-env" aria-label="Enviar" ${enviando ? "disabled" : ""}>${ICO.up}</button>
+        </div>
+        ${S.conversa.length ? '<button class="btn bare" id="chat-limpar">Apagar esta conversa</button>' : ""}`,
+      aoMontar(host) {
+        const log = $(".panel-body", host);
+        log.scrollTop = log.scrollHeight;
+
+        const txt = $("#chat-txt", host);
+        const crescer = () => { txt.style.height = "auto"; txt.style.height = Math.min(130, txt.scrollHeight) + "px"; };
+        txt.addEventListener("input", crescer);
+        crescer();
+        if (preencher) txt.focus();
+
+        liga(host, "[data-sugestao]", "click", (e) => { txt.value = e.currentTarget.dataset.sugestao; crescer(); txt.focus(); });
+
+        const limpar = $("#chat-limpar", host);
+        if (limpar) limpar.addEventListener("click", async () => {
+          const ids = S.conversa.map((m) => m.id);
+          S.conversa = [];
+          if (S.db) for (const id of ids) { try { await S.db.doc("conversa/" + id).delete(); } catch (err) { /* segue */ } }
+          desenhar();
+        });
+
+        const enviar = async () => {
+          const pergunta = txt.value.trim();
+          if (!pergunta || enviando) return;
+          if (!S.sample) return erroPainel(host, "A conversa com o Watson nao esta disponivel nesta visualizacao.");
+
+          const { texto: contexto, consultado } = montarContexto(pergunta);
+          const minha = { id: novoId(), papel: "eu", texto: pergunta, consultado: consultado.join(", "), criadoEm: new Date().toISOString() };
+          S.conversa.push(minha);
+          if (S.db) { try { await S.db.doc("conversa/" + minha.id).set(minha); } catch (err) { /* segue em memoria */ } }
+
+          enviando = true;
+          desenhar();
+
+          // O historico recente vai junto para a conversa ter fio; as
+          // instrucoes sao sempre o primeiro turno e nunca caem fora.
+          const anteriores = S.conversa.slice(-9, -1).map((m) => ({ role: m.papel === "eu" ? "user" : "assistant", content: m.texto }));
+          const turnos = [{ role: "user", content: INSTRUCOES }]
+            .concat(anteriores)
+            .concat([{ role: "user", content: `${contexto}\n\n---\n\nPergunta: ${pergunta}` }]);
+
+          try {
+            const r = await S.sample(turnos, { cache: false });
+            const dele = { id: novoId(), papel: "watson", texto: r.text, consultado: "", criadoEm: new Date().toISOString() };
+            S.conversa.push(dele);
+            if (S.db) { try { await S.db.doc("conversa/" + dele.id).set(dele); } catch (err) { /* segue */ } }
+            enviando = false;
+            desenhar();
+          } catch (e) {
+            enviando = false;
+            desenhar();
+            const cod = e && e.code;
+            const msg = cod === "not_granted" ? "Voce recusou o acesso ao Claude. Toque novamente para autorizar."
+              : cod === "rate_limited" ? "Muitas perguntas em pouco tempo. Espere um instante e tente de novo."
+              : cod === "prompt_too_large" ? "Sua base ficou grande demais para uma pergunta so. Seja mais especifico."
+              : "Nao consegui falar com o Watson agora. Tente novamente.";
+            erroPainel($("#panel-host"), msg);
+          }
+        };
+
+        $("#chat-env", host).addEventListener("click", enviar);
+        txt.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); }
+        });
+      },
+    });
+  }
+  desenhar();
+}
+
+/* ---------- exportacao ---------- */
+async function exportarDados() {
+  if (!S.downloads) { S.aviso = "A exportacao nao esta disponivel nesta visualizacao."; return render(); }
+  const pacote = {
+    formato: "watson-backup", versao: 1, geradoEm: new Date().toISOString(),
+    eventos: S.eventos.filter((x) => !x.demo),
+    aniversarios: S.aniversarios.filter((x) => !x.demo),
+    saude: S.saude.filter((x) => !x.demo),
+    dossies: S.dossies.filter((x) => !x.demo),
+  };
+  try {
+    await S.downloads.save({
+      filename: `watson-${new Date().toISOString().slice(0, 10)}.json`,
+      data: JSON.stringify(pacote, null, 2),
+    });
+    S.aviso = null;
+  } catch (e) {
+    if (e && e.code === "declined") return;
+    S.aviso = "Nao consegui gerar o arquivo agora.";
+    render();
+  }
+}
+</script>
+<script>
+"use strict";
+
+/* ---------- barra inferior ----------
+   O Watson ocupa o centro, elevado e em latao: e o destino que se procura
+   primeiro. Os outros quatro se distribuem ao redor. */
+const ABAS = [
+  { id: "agenda", rotulo: "AGENDA", ico: ICO.cal },
+  { id: "saude", rotulo: "SAUDE", ico: ICO.pulse },
+  { id: "watson", rotulo: "WATSON", ico: ICO.home, centro: true },
+  { id: "dossies", rotulo: "DOSSIES", ico: ICO.books },
+  { id: "ajustes", rotulo: "AJUSTES", ico: ICO.gear },
+];
+
+function renderBarra() {
+  $("#bar").innerHTML = ABAS.map((a) => {
+    const ativo = S.aba === a.id;
+    return `<button data-aba="${a.id}" aria-current="${ativo}" ${a.centro ? 'class="home-slot"' : ""}>
+      ${a.centro ? `<span class="home-mark">${a.ico}</span>` : a.ico}
+      <span>${a.rotulo}</span>
+    </button>`;
+  }).join("");
+}
+
+/* ---------- render ---------- */
+function render() {
+  const view = $("#view");
+  const antes = window.scrollY;
+  view.innerHTML = S.aba === "watson" ? viewWatson()
+    : S.aba === "agenda" ? viewAgenda()
+    : S.aba === "saude" ? viewSaude()
+    : S.aba === "dossies" ? viewDossies()
+    : viewAjustes();
+  renderBarra();
+  if (S.manterRolagem) { window.scrollTo(0, antes); S.manterRolagem = false; }
+}
+
+function irPara(aba) {
+  if (S.aba === aba) return;
+  S.aba = aba;
+  S.busca = "";
+  window.scrollTo(0, 0);
+  render();
+}
+
+/* ---------- eventos ----------
+   Um unico ouvinte na raiz: a pagina se redesenha inteira a cada mudanca,
+   entao ouvir no documento evita religar tudo a cada render. */
+document.addEventListener("click", (e) => {
+  const alvo = (sel) => e.target.closest(sel);
+
+  const aba = alvo("[data-aba]");
+  if (aba) return irPara(aba.dataset.aba);
+
+  const ir = alvo("[data-ir]");
+  if (ir) return irPara(ir.dataset.ir);
+
+  if (alvo("#abrir-conversa")) return painelConversa();
+
+  const mes = alvo("[data-mes]");
+  if (mes) {
+    const passo = Number(mes.dataset.mes);
+    if (passo === 0) { S.mesRef = new Date(new Date().getFullYear(), new Date().getMonth(), 1); S.diaSel = new Date(); }
+    else S.mesRef = new Date(S.mesRef.getFullYear(), S.mesRef.getMonth() + passo, 1);
+    S.manterRolagem = true;
+    return render();
+  }
+
+  const dia = alvo("[data-dia]");
+  if (dia) { S.diaSel = doDia(dia.dataset.dia); S.manterRolagem = true; return render(); }
+
+  const abaAg = alvo("[data-aba-agenda]");
+  if (abaAg) { S.abaAgenda = abaAg.dataset.abaAgenda; return render(); }
+
+  const per = alvo("[data-periodo]");
+  if (per) { S.periodoSaude = per.dataset.periodo; S.manterRolagem = true; return render(); }
+
+  const emp = alvo("[data-empresa]");
+  if (emp) { S.filtroEmpresa = emp.dataset.empresa; S.manterRolagem = true; return render(); }
+
+  if (alvo("[data-limpar-busca]")) { S.busca = ""; return render(); }
+
+  if (alvo("[data-novo-evento]")) return painelEvento(null);
+  if (alvo("[data-novo-aniv]")) return painelAniversario(null);
+  if (alvo("[data-novo-relatorio]")) return painelRelatorio(null);
+  if (alvo("[data-novo-dossie]")) return painelDossie(null);
+  if (alvo("[data-exportar]")) return exportarDados();
+
+  const abrirEv = alvo("[data-abrir-evento]");
+  if (abrirEv) {
+    const ev = S.eventos.find((x) => x.id === abrirEv.dataset.abrirEvento);
+    if (ev && ev.demo) { S.aviso = "Este e um evento de exemplo. Crie o seu com o botao de adicionar."; return render(); }
+    if (ev) return painelEvento(ev);
+  }
+
+  const abrirAn = alvo("[data-abrir-aniv]");
+  if (abrirAn) {
+    const an = S.aniversarios.find((x) => x.id === abrirAn.dataset.abrirAniv);
+    if (an && an.demo) { S.aviso = "Este e um aniversario de exemplo."; return render(); }
+    if (an) return painelAniversario(an);
+  }
+
+  const abrirDo = alvo("[data-abrir-dossie]");
+  if (abrirDo) {
+    const d = S.dossies.find((x) => x.id === abrirDo.dataset.abrirDossie);
+    if (d) return painelDetalheDossie(d);
+  }
+});
+
+document.addEventListener("input", (e) => {
+  if (e.target.id === "campo-busca") {
+    S.busca = e.target.value;
+    const foco = document.activeElement === e.target;
+    const pos = e.target.selectionStart;
+    S.manterRolagem = true;
+    render();
+    if (foco) {
+      const novo = $("#campo-busca");
+      if (novo) { novo.focus(); try { novo.setSelectionRange(pos, pos); } catch (err) { /* navegador antigo */ } }
+    }
+  }
+});
+
+/* ---------- inicio ----------
+   A pagina desenha com o que tem e liga as capacidades quando elas
+   respondem. Se nenhuma responder, o Watson ainda abre e mostra o
+   exemplo, so nao guarda nada. */
+async function iniciar() {
+  render();
+
+  const [db, sample, downloads] = await Promise.all([
+    window.claude && window.claude.use ? window.claude.use("db").catch(() => null) : null,
+    window.claude && window.claude.use ? window.claude.use("sample").catch(() => null) : null,
+    window.claude && window.claude.use ? window.claude.use("downloads").catch(() => null) : null,
+  ]);
+
+  S.db = db;
+  S.sample = sample;
+  S.downloads = downloads;
+
+  await carregarTudo();
+  S.pronto = true;
+  render();
+}
+
+iniciar();
+</script>
